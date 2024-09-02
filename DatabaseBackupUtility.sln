@@ -1,0 +1,16 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DatabaseBackupUtility", "DatabaseBackupUtility\DatabaseBackupUtility.csproj", "{420638C4-2C27-4055-84E8-E3DFC4562972}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{420638C4-2C27-4055-84E8-E3DFC4562972}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{420638C4-2C27-4055-84E8-E3DFC4562972}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{420638C4-2C27-4055-84E8-E3DFC4562972}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{420638C4-2C27-4055-84E8-E3DFC4562972}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,17 @@
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information", 
+      "System": "Warning",
+      "Microsoft": "Warning"     
+    },
+    "FileLogging": {
+      "Path": "logs/app.log",
+      "RollingInterval": "Day", 
+      "RetainedFileCountLimit": 7 
+    },
+    "ConsoleLogging": {
+      "Enabled": true             
+    }
+  }
+}
