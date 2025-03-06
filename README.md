@@ -1,5 +1,6 @@
 # Database Backup Utility
-https://roadmap.sh/projects/database-backup-utility
+![Database Backup Utility Logo](logo.png)
+
 
 ## Overview
 
@@ -69,3 +70,5 @@ DatabaseBackupUtility.exe --config config.json restore
 * **Database Configuration:** Specifies the database type, connection details, and credentials.
 * **Storage Configuration:** Defines where the backups will be stored (locally or in the cloud).
 * **Notifications:** Allows you to configure notifications, such as Slack messages, to be sent upon completion of operations.
+
+https://roadmap.sh/projects/database-backup-utility
