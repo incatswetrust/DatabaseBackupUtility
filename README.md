@@ -4,7 +4,7 @@
 
 ## Overview
 
-The **Database Backup Utility** is a versatile tool designed to simplify the process of creating and restoring backups for various database management systems (DBMS). This tool is especially useful for developers and administrators who need a reliable way to manage database backups via a command-line interface.
+The **Database Backup Utility v.1.0.0** is a versatile tool designed to simplify the process of creating and restoring backups for various database management systems (DBMS). This tool is especially useful for developers and administrators who need a reliable way to manage database backups via a command-line interface.
 
 ## Features
 
