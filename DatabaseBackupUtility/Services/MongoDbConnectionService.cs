@@ -19,7 +19,7 @@ public class MongoDbConnectionService : IDatabaseConnection
             await _client.ListDatabaseNamesAsync();
             return true;
         }
-        catch (Exception)
+        catch
         {
             return false;
         }

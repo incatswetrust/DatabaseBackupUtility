@@ -16,6 +16,7 @@ public class AzureBlobStorageService(BlobServiceClient blobServiceClient, string
         catch (Exception ex)
         {
             Console.WriteLine($"Error uploading file to Azure Blob Storage: {ex.Message}");
+            throw;
         }
     }
 
@@ -30,6 +31,7 @@ public class AzureBlobStorageService(BlobServiceClient blobServiceClient, string
         catch (Exception ex)
         {
             Console.WriteLine($"Error downloading file from Azure Blob Storage: {ex.Message}");
+            throw;
         }
     }
 }
