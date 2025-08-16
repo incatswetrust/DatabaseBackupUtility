@@ -1,18 +1,11 @@
 namespace DatabaseBackupUtility.Configs;
 
-public class PostgreSqlBackupService : IBackupService
+public class PostgreSqlBackupService(IDatabaseConnection dbConnection) : IBackupService
 {
-    private readonly IDatabaseConnection _dbConnection;
-
-    public PostgreSqlBackupService(IDatabaseConnection dbConnection)
+    public async Task CreateBackup(string backupFilePath)
     {
-        _dbConnection = dbConnection;
-    }
-
-    public void CreateBackup(string backupFilePath)
-    {
-        _dbConnection.Connect();
-        _dbConnection.Backup(backupFilePath);
-        _dbConnection.Disconnect();
+        await dbConnection.Connect();
+        await dbConnection.Backup(backupFilePath);
+        await dbConnection.Disconnect();
     }
 }

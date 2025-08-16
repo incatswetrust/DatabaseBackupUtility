@@ -3,8 +3,6 @@ using MySqlConnector;
 
 namespace DatabaseBackupUtility.Configs;
 
-
-
 public class MySqlConnectionService : IDatabaseConnection
 {
     private readonly string _host;
@@ -27,12 +25,12 @@ public class MySqlConnectionService : IDatabaseConnection
         return $"Server={_host};Database={_database};User={_username};Password={_password};";
     }
 
-    public bool TestConnection()
+    public async Task <bool> TestConnection()
     {
         try
         {
-            Connect();
-            Disconnect();
+            await Connect();
+            await Disconnect();
             return true;
         }
         catch (Exception)
@@ -41,37 +39,39 @@ public class MySqlConnectionService : IDatabaseConnection
         }
     }
 
-    public void Connect()
+    public async Task Connect()
     {
-        _connection.Open();
+        await _connection.ChangeDatabaseAsync(_database);
         Console.WriteLine("Connected to MySQL database.");
     }
-
-    public void Disconnect()
+    
+    public async Task Disconnect()
     {
         if (_connection.State != System.Data.ConnectionState.Open) return;
-        _connection.Close();
+        await _connection.CloseAsync();
         Console.WriteLine("Disconnected from MySQL database.");
     }
 
-    public void Backup(string backupFilePath)
+    public async Task Backup(string backupFilePath)
     {
-        string backupCommand =
-            $"mysqldump --databases {_database} --user={_username} --password={_password} > {backupFilePath}";
-
-        ExecuteCommand(backupCommand);
-
-        Console.WriteLine($"Backup created at {backupFilePath}");
+        await Task.Run(() =>
+        {
+            var backupCommand =
+                $"mysqldump --databases {_database} --user={_username} --password={_password} > {backupFilePath}";
+            ExecuteCommand(backupCommand);
+            Console.WriteLine($"Backup created at {backupFilePath}");
+        });
     }
 
-    public void Restore(string backupFilePath)
+    public async Task Restore(string backupFilePath)
     {
-        var restoreCommand =
-            $"mysql --database={_database} --user={_username} --password={_password} < {backupFilePath}";
-
-        ExecuteCommand(restoreCommand);
-
-        Console.WriteLine($"Database restored from {backupFilePath}");
+        await Task.Run(() =>
+        {
+            var restoreCommand =
+                $"mysql --database={_database} --user={_username} --password={_password} < {backupFilePath}";
+            ExecuteCommand(restoreCommand);
+            Console.WriteLine($"Database restored from {backupFilePath}");
+        });
     }
 
     private void ExecuteCommand(string command)

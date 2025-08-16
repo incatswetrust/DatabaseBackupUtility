@@ -2,6 +2,6 @@ namespace DatabaseBackupUtility.Configs;
 
 public interface IStorageService
 {
-    void SaveBackup(string sourceFilePath, string destinationPath);
-    void LoadBackup(string backupFilePath, string destinationPath);
+    Task SaveBackup(string sourceFilePath, string destinationPath);
+    Task LoadBackup(string backupFilePath, string destinationPath);
 }

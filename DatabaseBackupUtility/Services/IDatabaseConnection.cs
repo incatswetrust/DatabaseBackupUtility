@@ -2,11 +2,11 @@ namespace DatabaseBackupUtility.Configs;
 
 public interface IDatabaseConnection
 {
-    bool TestConnection();
-    void Connect();
-    void Disconnect();
+    Task<bool> TestConnection();
+    Task Connect();
+    Task Disconnect();
     // Adding a method to execute the backup command (data export)
-    void Backup(string backupFilePath);
+    Task Backup(string backupFilePath);
     // Adding a method to execute the recovery command (data import)
-    void Restore(string backupFilePath);
+    Task Restore(string backupFilePath);
 }

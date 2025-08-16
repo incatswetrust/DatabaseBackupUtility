@@ -2,7 +2,7 @@ namespace DatabaseBackupUtility.Configs;
 
 public class MySqlRestoreService(IDatabaseConnection dbConnection) : IRestoreService
 {
-    public void RestoreDatabase(string backupFilePath)
+    public async Task RestoreDatabase(string backupFilePath)
     {
         dbConnection.Connect();
         try

@@ -2,5 +2,5 @@ namespace DatabaseBackupUtility.Configs;
 
 public interface IRestoreService
 {
-    void RestoreDatabase(string backupFilePath);
+    Task RestoreDatabase(string backupFilePath);
 }
