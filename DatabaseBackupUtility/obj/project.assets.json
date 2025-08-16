@@ -133,6 +133,19 @@
           }
         }
       },
+      "FluentValidation/12.0.0": {
+        "type": "package",
+        "compile": {
+          "lib/net8.0/FluentValidation.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net8.0/FluentValidation.dll": {
+            "related": ".xml"
+          }
+        }
+      },
       "Google.Api.Gax/4.8.0": {
         "type": "package",
         "dependencies": {
@@ -1643,6 +1656,21 @@
         "lib/netstandard2.0/DnsClient.xml",
         "lib/netstandard2.1/DnsClient.dll",
         "lib/netstandard2.1/DnsClient.xml"
+      ]
+    },
+    "FluentValidation/12.0.0": {
+      "sha512": "8NVLxtMUXynRHJIX3Hn1ACovaqZIJASufXIIFkD0EUbcd5PmMsL1xUD5h548gCezJ5BzlITaR9CAMrGe29aWpA==",
+      "type": "package",
+      "path": "fluentvalidation/12.0.0",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "README.md",
+        "fluent-validation-icon.png",
+        "fluentvalidation.12.0.0.nupkg.sha512",
+        "fluentvalidation.nuspec",
+        "lib/net8.0/FluentValidation.dll",
+        "lib/net8.0/FluentValidation.xml"
       ]
     },
     "Google.Api.Gax/4.8.0": {
@@ -4486,6 +4514,7 @@
       "AWSSDK.S3 >= 4.0.0-preview.2",
       "Azure.Storage.Blobs >= 12.22.0-beta.1",
       "Dapper >= 2.1.35",
+      "FluentValidation >= 12.0.0",
       "Google.Cloud.Storage.V1 >= 4.10.0",
       "Microsoft.Extensions.Configuration >= 9.0.0-preview.7.24405.7",
       "Microsoft.Extensions.Configuration.Binder >= 9.0.0-preview.7.24405.7",
@@ -4558,6 +4587,10 @@
           "Dapper": {
             "target": "Package",
             "version": "[2.1.35, )"
+          },
+          "FluentValidation": {
+            "target": "Package",
+            "version": "[12.0.0, )"
           },
           "Google.Cloud.Storage.V1": {
             "target": "Package",

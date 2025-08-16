@@ -55,6 +55,10 @@
               "target": "Package",
               "version": "[2.1.35, )"
             },
+            "FluentValidation": {
+              "target": "Package",
+              "version": "[12.0.0, )"
+            },
             "Google.Cloud.Storage.V1": {
               "target": "Package",
               "version": "[4.10.0, )"
