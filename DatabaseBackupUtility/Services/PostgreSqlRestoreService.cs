@@ -1,30 +1,26 @@
 namespace DatabaseBackupUtility.Configs;
 
-public class PostgreSqlRestoreService : IRestoreService
+public class PostgreSqlRestoreService(IDatabaseConnection dbConnection) : IRestoreService
 {
-    private readonly IDatabaseConnection _dbConnection;
-
-    public PostgreSqlRestoreService(IDatabaseConnection dbConnection)
+    public async Task RestoreDatabase(string backupFilePath)
     {
-        _dbConnection = dbConnection;
-    }
-
-    public void RestoreDatabase(string backupFilePath)
-    {
-        _dbConnection.Connect();
-        try
+        await Task.Run(() =>
         {
-            _dbConnection.Restore(backupFilePath);
-            Console.WriteLine($"Database restored successfully from {backupFilePath}");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error during database restore: {ex.Message}");
-            throw;
-        }
-        finally
-        {
-            _dbConnection.Disconnect();
-        }
+            dbConnection.Connect();
+            try
+            {
+                dbConnection.Restore(backupFilePath);
+                Console.WriteLine($"Database restored successfully from {backupFilePath}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error during database restore: {ex.Message}");
+                throw;
+            }
+            finally
+            {
+                dbConnection.Disconnect();
+            }
+        });
     }
 }

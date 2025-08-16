@@ -12,12 +12,12 @@ public class PostgreSqlConnectionService : IDatabaseConnection
         _connectionString = $"Host={host};Database={database};Username={username};Password={password};";
     }
 
-    public bool TestConnection()
+    public async Task< bool> TestConnection()
     {
         try
         {
-            Connect();
-            Disconnect();
+            await Connect();
+            await Disconnect();
             return true;
         }
         catch (Exception)
@@ -26,33 +26,39 @@ public class PostgreSqlConnectionService : IDatabaseConnection
         }
     }
 
-    public void Connect()
+    public async Task Connect()
     {
         _connection = new NpgsqlConnection(_connectionString);
-        _connection.Open();
+        await _connection.OpenAsync();
         Console.WriteLine("Connected to PostgreSQL database.");
     }
 
-    public void Disconnect()
+    public async Task Disconnect()
     {
-        if (_connection != null && _connection.State == System.Data.ConnectionState.Open)
+        if (_connection.State == System.Data.ConnectionState.Open)
         {
-            _connection.Close();
+            await _connection.CloseAsync();
             Console.WriteLine("Disconnected from PostgreSQL database.");
         }
     }
 
-    public void Backup(string backupFilePath)
+    public async Task Backup(string backupFilePath)
     {
-        var backupCommand = $"pg_dump --file \"{backupFilePath}\" --dbname \"{_connectionString}\"";
-        System.Diagnostics.Process.Start("bash", $"-c \"{backupCommand}\"");
-        Console.WriteLine($"Backup created at {backupFilePath}");
+        await Task.Run(() =>
+        {
+            var backupCommand = $"pg_dump --file \"{backupFilePath}\" --dbname \"{_connectionString}\"";
+            System.Diagnostics.Process.Start("bash", $"-c \"{backupCommand}\"");
+            Console.WriteLine($"Backup created at {backupFilePath}");
+        });
     }
 
-    public void Restore(string backupFilePath)
+    public async Task Restore(string backupFilePath)
     {
-        var restoreCommand = $"psql --file \"{backupFilePath}\" --dbname \"{_connectionString}\"";
-        System.Diagnostics.Process.Start("bash", $"-c \"{restoreCommand}\"");
-        Console.WriteLine($"Database restored from {backupFilePath}");
+        await Task.Run(() =>
+        {
+            var restoreCommand = $"psql --file \"{backupFilePath}\" --dbname \"{_connectionString}\"";
+            System.Diagnostics.Process.Start("bash", $"-c \"{restoreCommand}\"");
+            Console.WriteLine($"Database restored from {backupFilePath}");
+        });
     }
 }

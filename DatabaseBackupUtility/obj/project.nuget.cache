@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "XSXJiFevqTY=",
+  "dgSpecHash": "Jbl9dTRCm9M=",
   "success": true,
   "projectFilePath": "/Users/mac/Desktop/Oleksii/Elvensoft/Projects/Elvensoft_/DatabaseBackupUtility/DatabaseBackupUtility/DatabaseBackupUtility.csproj",
   "expectedPackageFiles": [
@@ -12,6 +12,7 @@
     "/Users/mac/.nuget/packages/azure.storage.common/12.21.0-beta.1/azure.storage.common.12.21.0-beta.1.nupkg.sha512",
     "/Users/mac/.nuget/packages/dapper/2.1.35/dapper.2.1.35.nupkg.sha512",
     "/Users/mac/.nuget/packages/dnsclient/1.6.1/dnsclient.1.6.1.nupkg.sha512",
+    "/Users/mac/.nuget/packages/fluentvalidation/12.0.0/fluentvalidation.12.0.0.nupkg.sha512",
     "/Users/mac/.nuget/packages/google.api.gax/4.8.0/google.api.gax.4.8.0.nupkg.sha512",
     "/Users/mac/.nuget/packages/google.api.gax.rest/4.8.0/google.api.gax.rest.4.8.0.nupkg.sha512",
     "/Users/mac/.nuget/packages/google.apis/1.67.0/google.apis.1.67.0.nupkg.sha512",
@@ -43,6 +44,8 @@
     "/Users/mac/.nuget/packages/mysqlconnector/2.3.7/mysqlconnector.2.3.7.nupkg.sha512",
     "/Users/mac/.nuget/packages/newtonsoft.json/13.0.3/newtonsoft.json.13.0.3.nupkg.sha512",
     "/Users/mac/.nuget/packages/npgsql/8.0.3/npgsql.8.0.3.nupkg.sha512",
+    "/Users/mac/.nuget/packages/polly/8.6.2/polly.8.6.2.nupkg.sha512",
+    "/Users/mac/.nuget/packages/polly.core/8.6.2/polly.core.8.6.2.nupkg.sha512",
     "/Users/mac/.nuget/packages/runtime.native.system/4.3.0/runtime.native.system.4.3.0.nupkg.sha512",
     "/Users/mac/.nuget/packages/runtime.native.system.io.compression/4.3.0/runtime.native.system.io.compression.4.3.0.nupkg.sha512",
     "/Users/mac/.nuget/packages/serilog/4.0.2-dev-02226/serilog.4.0.2-dev-02226.nupkg.sha512",

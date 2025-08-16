@@ -2,5 +2,5 @@ namespace DatabaseBackupUtility.Configs;
 
 public interface IBackupService
 {
-    void CreateBackup(string backupFilePath);
+    Task CreateBackup(string backupFilePath);
 }

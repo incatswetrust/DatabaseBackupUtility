@@ -12,44 +12,54 @@ public class MongoDbConnectionService : IDatabaseConnection
         _database = _client.GetDatabase(databaseName);
     }
 
-    public bool TestConnection()
+    public async Task <bool> TestConnection()
     {
         try
         {
-            _client.ListDatabaseNames();
+            await _client.ListDatabaseNamesAsync();
             return true;
         }
-        catch (Exception)
+        catch
         {
             return false;
         }
     }
 
-    public void Connect()
+    public async Task Connect()
     {
         // MongoDB automatically manages the connection
+        await Task.Delay(1);
         Console.WriteLine("Connected to MongoDB database.");
     }
 
-    public void Disconnect()
+    public async Task Disconnect()
     {
         // MongoDB driver does not require explicit connection closing
+        await Task.Delay(1);
         Console.WriteLine("Disconnected from MongoDB database.");
     }
 
-    public void Backup(string backupFilePath)
+    public async Task Backup(string backupFilePath)
     {
         // Using the `mongodump` utility
-        var backupCommand = $"mongodump --uri=\"{_client.Settings.Server}\" --db=\"{_database.DatabaseNamespace.DatabaseName}\" --out=\"{backupFilePath}\"";
-        System.Diagnostics.Process.Start("bash", $"-c \"{backupCommand}\"");
-        Console.WriteLine($"Backup created at {backupFilePath}");
+        await Task.Run(() =>
+        {
+            var backupCommand =
+                $"mongodump --uri=\"{_client.Settings.Server}\" --db=\"{_database.DatabaseNamespace.DatabaseName}\" --out=\"{backupFilePath}\"";
+            System.Diagnostics.Process.Start("bash", $"-c \"{backupCommand}\"");
+            Console.WriteLine($"Backup created at {backupFilePath}");
+        });
     }
 
-    public void Restore(string backupFilePath)
+    public async Task Restore(string backupFilePath)
     {
         // Using the `mongorestore` utility
-        var restoreCommand = $"mongorestore --uri=\"{_client.Settings.Server}\" --db=\"{_database.DatabaseNamespace.DatabaseName}\" \"{backupFilePath}\"";
-        System.Diagnostics.Process.Start("bash", $"-c \"{restoreCommand}\"");
-        Console.WriteLine($"Database restored from {backupFilePath}");
+        await Task.Run(() =>
+        {
+            var restoreCommand =
+                $"mongorestore --uri=\"{_client.Settings.Server}\" --db=\"{_database.DatabaseNamespace.DatabaseName}\" \"{backupFilePath}\"";
+            System.Diagnostics.Process.Start("bash", $"-c \"{restoreCommand}\"");
+            Console.WriteLine($"Database restored from {backupFilePath}");
+        });
     }
 }

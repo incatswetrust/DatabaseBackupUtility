@@ -2,22 +2,15 @@ using System.Text;
 
 namespace DatabaseBackupUtility.Configs;
 
-public class SlackNotificationService : INotificationService
+public class SlackNotificationService(string webhookUrl) : INotificationService
 {
-    private readonly string _webhookUrl;
-
-    public SlackNotificationService(string webhookUrl)
-    {
-        _webhookUrl = webhookUrl;
-    }
-
-    public async void SendNotification(string message)
+    public async Task SendNotification(string message)
     {
         using var httpClient = new HttpClient();
         var payload = new { text = message };
         var content = new StringContent(System.Text.Json.JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
 
-        var response = await httpClient.PostAsync(_webhookUrl, content);
+        var response = await httpClient.PostAsync(webhookUrl, content);
 
         if (!response.IsSuccessStatusCode)
         {

@@ -4,9 +4,9 @@ namespace DatabaseBackupUtility.Configs;
 
 public class GoogleCloudStorageService(StorageClient storageClient, string bucketName) : IStorageService
 {
-    public void SaveBackup(string sourceFilePath, string destinationPath)
+    public async Task SaveBackup(string sourceFilePath, string destinationPath)
     {
-        using var fileStream = File.OpenRead(sourceFilePath);
+        await using var fileStream = File.OpenRead(sourceFilePath);
         try
         {
             storageClient.UploadObject(bucketName, destinationPath, null, fileStream);
@@ -18,9 +18,9 @@ public class GoogleCloudStorageService(StorageClient storageClient, string bucke
         }
     }
 
-    public void LoadBackup(string backupFilePath, string destinationPath)
+    public async Task LoadBackup(string backupFilePath, string destinationPath)
     {
-        using var outputFile = File.OpenWrite(destinationPath);
+        await using var outputFile = File.OpenWrite(destinationPath);
         try
         {
             storageClient.DownloadObject(bucketName, backupFilePath, outputFile);
