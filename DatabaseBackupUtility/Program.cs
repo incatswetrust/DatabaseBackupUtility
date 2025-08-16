@@ -7,7 +7,7 @@ using Polly;
 using Serilog;
 
 
-var isNotify = true;
+    var isNotify = true;
     var parser = new CommandLineParser(args);
 
     if (!parser.IsValid())
@@ -76,8 +76,6 @@ var isNotify = true;
         .WriteTo.Console()
         .CreateLogger();
 
-
-
     await using var serviceProvider = new ServiceCollection()
         .AddSingleton<IDatabaseConnectionFactory, DatabaseConnectionFactory>()
         .AddSingleton(sp => sp.GetService<IDatabaseConnectionFactory>()!.CreateConnection(dbConfig))
@@ -142,9 +140,11 @@ var isNotify = true;
             }
         }
     }
-    catch
+    catch (Exception ex)
     {
-
+        Console.WriteLine($"Error during backup process: {ex.Message}");
+        if(isNotify)
+            await notificationService?.SendNotification($"Error during backup process: {ex.Message}")!;
     }
 
     return;
