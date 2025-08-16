@@ -1,4 +1,5 @@
 ﻿using DatabaseBackupUtility.Configs;
+using DatabaseBackupUtility.Models;
 using Microsoft.Extensions.Configuration;
         using Microsoft.Extensions.DependencyInjection;
         using Polly;
@@ -8,7 +9,6 @@ var parser = new CommandLineParser(args);
 
         if (!parser.IsValid())
             return;
-        
         var command = parser.GetCommand();
         var configPath = parser.GetOption("--config");
 
@@ -22,18 +22,30 @@ var parser = new CommandLineParser(args);
             .SetBasePath(Directory.GetCurrentDirectory())
             .AddJsonFile(configPath, optional: false, reloadOnChange: true)
             .Build();
+
+        var dbConfig = configuration.GetSection("Database").Get<DatabaseConfig>();
+        var validator = new DatabaseConfigValidator();
+        var validationResult = validator.Validate(dbConfig);
+
+        if (!validationResult.IsValid)
+        {
+            foreach (var error in validationResult.Errors)
+            {
+                Console.WriteLine(error.ErrorMessage);
+            }
+            return;
+        }
+
         Log.Logger = new LoggerConfiguration()
             .ReadFrom.Configuration(configuration)
             .WriteTo.Console()
             .CreateLogger();
 
+
+
         await using var serviceProvider = new ServiceCollection()
                 .AddSingleton<IDatabaseConnectionFactory, DatabaseConnectionFactory>()
-                .AddSingleton(sp =>
-                {
-                    var dbConfigSection = sp.GetService<IConfiguration>()!.GetSection("Database");
-                    return sp.GetService<IDatabaseConnectionFactory>()!.CreateConnection(dbConfigSection);
-                })
+                .AddSingleton(sp => sp.GetService<IDatabaseConnectionFactory>()!.CreateConnection(dbConfig))
 
             .AddSingleton<IConfiguration>(configuration) 
             .AddSingleton<ILoggingService, SerilogLoggingService>()
