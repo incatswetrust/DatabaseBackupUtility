@@ -7,24 +7,15 @@ using System.Threading.Tasks;
 namespace DatabaseBackupUtility.Configs;
 
 
-public class AwsS3StorageService : IStorageService
+public class AwsS3StorageService(IAmazonS3 s3Client, string bucketName) : IStorageService
 {
-    private readonly IAmazonS3 _s3Client;
-    private readonly string _bucketName;
-
-    public AwsS3StorageService(IAmazonS3 s3Client, string bucketName)
-    {
-        _s3Client = s3Client;
-        _bucketName = bucketName;
-    }
-
     public void SaveBackup(string sourceFilePath, string destinationPath)
     {
-        var fileTransferUtility = new TransferUtility(_s3Client);
+        var fileTransferUtility = new TransferUtility(s3Client);
         try
         {
-            fileTransferUtility.Upload(sourceFilePath, _bucketName, destinationPath);
-            Console.WriteLine($"Backup uploaded to S3 bucket {_bucketName} at {destinationPath}");
+            fileTransferUtility.Upload(sourceFilePath, bucketName, destinationPath);
+            Console.WriteLine($"Backup uploaded to S3 bucket {bucketName} at {destinationPath}");
         }
         catch (Exception ex)
         {
@@ -34,11 +25,11 @@ public class AwsS3StorageService : IStorageService
 
     public void LoadBackup(string backupFilePath, string destinationPath)
     {
-        var fileTransferUtility = new TransferUtility(_s3Client);
+        var fileTransferUtility = new TransferUtility(s3Client);
         try
         {
-            fileTransferUtility.Download(destinationPath, _bucketName, backupFilePath);
-            Console.WriteLine($"Backup downloaded from S3 bucket {_bucketName} to {destinationPath}");
+            fileTransferUtility.Download(destinationPath, bucketName, backupFilePath);
+            Console.WriteLine($"Backup downloaded from S3 bucket {bucketName} to {destinationPath}");
         }
         catch (Exception ex)
         {

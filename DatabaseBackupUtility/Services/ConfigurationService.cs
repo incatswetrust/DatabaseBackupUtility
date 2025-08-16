@@ -38,13 +38,13 @@ public class ConfigurationService : IConfigurationService
         var json = File.ReadAllText(_filePath);
         var jsonObj = JsonConvert.DeserializeObject<Dictionary<string, object>>(json);
 
-        if (jsonObj.ContainsKey(sectionName))
+        if (jsonObj != null && jsonObj.ContainsKey(sectionName))
         {
             jsonObj[sectionName] = value;
         }
         else
         {
-            jsonObj.Add(sectionName, value);
+            jsonObj?.Add(sectionName, value);
         }
 
         File.WriteAllText(_filePath, JsonConvert.SerializeObject(jsonObj, Formatting.Indented));
@@ -52,6 +52,5 @@ public class ConfigurationService : IConfigurationService
 
     public void SaveConfiguration()
     {
-        // В этом методе уже сохранено изменение через SetSection, но можно добавить доп. логику
     }
 }

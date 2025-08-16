@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "/Users/mac/Desktop/DatabaseBackupUtility/DatabaseBackupUtility/DatabaseBackupUtility.csproj": {}
+    "/Users/mac/Desktop/Oleksii/Elvensoft/Projects/Elvensoft_/DatabaseBackupUtility/DatabaseBackupUtility/DatabaseBackupUtility.csproj": {}
   },
   "projects": {
-    "/Users/mac/Desktop/DatabaseBackupUtility/DatabaseBackupUtility/DatabaseBackupUtility.csproj": {
+    "/Users/mac/Desktop/Oleksii/Elvensoft/Projects/Elvensoft_/DatabaseBackupUtility/DatabaseBackupUtility/DatabaseBackupUtility.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/Users/mac/Desktop/DatabaseBackupUtility/DatabaseBackupUtility/DatabaseBackupUtility.csproj",
+        "projectUniqueName": "/Users/mac/Desktop/Oleksii/Elvensoft/Projects/Elvensoft_/DatabaseBackupUtility/DatabaseBackupUtility/DatabaseBackupUtility.csproj",
         "projectName": "DatabaseBackupUtility",
-        "projectPath": "/Users/mac/Desktop/DatabaseBackupUtility/DatabaseBackupUtility/DatabaseBackupUtility.csproj",
+        "projectPath": "/Users/mac/Desktop/Oleksii/Elvensoft/Projects/Elvensoft_/DatabaseBackupUtility/DatabaseBackupUtility/DatabaseBackupUtility.csproj",
         "packagesPath": "/Users/mac/.nuget/packages/",
-        "outputPath": "/Users/mac/Desktop/DatabaseBackupUtility/DatabaseBackupUtility/obj/",
+        "outputPath": "/Users/mac/Desktop/Oleksii/Elvensoft/Projects/Elvensoft_/DatabaseBackupUtility/DatabaseBackupUtility/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "/Users/mac/.nuget/NuGet/NuGet.Config"
@@ -32,6 +32,11 @@
           "warnAsError": [
             "NU1605"
           ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
         }
       },
       "frameworks": {
@@ -131,7 +136,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/8.0.101/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/8.0.404/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

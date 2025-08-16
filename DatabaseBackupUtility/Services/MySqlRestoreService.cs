@@ -1,20 +1,13 @@
 namespace DatabaseBackupUtility.Configs;
 
-public class MySqlRestoreService : IRestoreService
+public class MySqlRestoreService(IDatabaseConnection dbConnection) : IRestoreService
 {
-    private readonly IDatabaseConnection _dbConnection;
-
-    public MySqlRestoreService(IDatabaseConnection dbConnection)
-    {
-        _dbConnection = dbConnection;
-    }
-
     public void RestoreDatabase(string backupFilePath)
     {
-        _dbConnection.Connect();
+        dbConnection.Connect();
         try
         {
-            _dbConnection.Restore(backupFilePath);
+            dbConnection.Restore(backupFilePath);
             Console.WriteLine($"Database restored successfully from {backupFilePath}");
         }
         catch (Exception ex)
@@ -24,7 +17,7 @@ public class MySqlRestoreService : IRestoreService
         }
         finally
         {
-            _dbConnection.Disconnect();
+            dbConnection.Disconnect();
         }
     }
 }

@@ -11,7 +11,7 @@ public class MySqlConnectionService : IDatabaseConnection
     private readonly string _database;
     private readonly string _username;
     private readonly string _password;
-    private MySqlConnection _connection;
+    private readonly MySqlConnection _connection;
 
     public MySqlConnectionService(string host, string database, string username, string password)
     {
@@ -49,11 +49,9 @@ public class MySqlConnectionService : IDatabaseConnection
 
     public void Disconnect()
     {
-        if (_connection != null && _connection.State == System.Data.ConnectionState.Open)
-        {
-            _connection.Close();
-            Console.WriteLine("Disconnected from MySQL database.");
-        }
+        if (_connection.State != System.Data.ConnectionState.Open) return;
+        _connection.Close();
+        Console.WriteLine("Disconnected from MySQL database.");
     }
 
     public void Backup(string backupFilePath)
@@ -68,7 +66,7 @@ public class MySqlConnectionService : IDatabaseConnection
 
     public void Restore(string backupFilePath)
     {
-        string restoreCommand =
+        var restoreCommand =
             $"mysql --database={_database} --user={_username} --password={_password} < {backupFilePath}";
 
         ExecuteCommand(restoreCommand);
@@ -87,10 +85,10 @@ public class MySqlConnectionService : IDatabaseConnection
         };
 
         using var process = Process.Start(processInfo);
-        process.WaitForExit();
+        process?.WaitForExit();
 
-        string output = process.StandardOutput.ReadToEnd();
-        string error = process.StandardError.ReadToEnd();
+        var output = process?.StandardOutput.ReadToEnd();
+        var error = process?.StandardError.ReadToEnd();
 
         if (!string.IsNullOrEmpty(output))
         {

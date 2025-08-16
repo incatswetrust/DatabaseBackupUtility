@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "hN2FSPWb4zVfjCDs5b3vXm6C+xDnMDBdm2oBDmWX9lfp6ZQV6gw1iWA07flZQy1SWTZrMqNa5rb+YY55OJT9gg==",
+  "dgSpecHash": "XSXJiFevqTY=",
   "success": true,
-  "projectFilePath": "/Users/mac/Desktop/DatabaseBackupUtility/DatabaseBackupUtility/DatabaseBackupUtility.csproj",
+  "projectFilePath": "/Users/mac/Desktop/Oleksii/Elvensoft/Projects/Elvensoft_/DatabaseBackupUtility/DatabaseBackupUtility/DatabaseBackupUtility.csproj",
   "expectedPackageFiles": [
     "/Users/mac/.nuget/packages/awssdk.core/4.0.0-preview.2/awssdk.core.4.0.0-preview.2.nupkg.sha512",
     "/Users/mac/.nuget/packages/awssdk.s3/4.0.0-preview.2/awssdk.s3.4.0.0-preview.2.nupkg.sha512",
