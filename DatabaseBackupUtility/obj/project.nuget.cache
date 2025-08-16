@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "XSXJiFevqTY=",
+  "dgSpecHash": "cBOVIj5odKE=",
   "success": true,
   "projectFilePath": "/Users/mac/Desktop/Oleksii/Elvensoft/Projects/Elvensoft_/DatabaseBackupUtility/DatabaseBackupUtility/DatabaseBackupUtility.csproj",
   "expectedPackageFiles": [
@@ -43,6 +43,8 @@
     "/Users/mac/.nuget/packages/mysqlconnector/2.3.7/mysqlconnector.2.3.7.nupkg.sha512",
     "/Users/mac/.nuget/packages/newtonsoft.json/13.0.3/newtonsoft.json.13.0.3.nupkg.sha512",
     "/Users/mac/.nuget/packages/npgsql/8.0.3/npgsql.8.0.3.nupkg.sha512",
+    "/Users/mac/.nuget/packages/polly/8.6.2/polly.8.6.2.nupkg.sha512",
+    "/Users/mac/.nuget/packages/polly.core/8.6.2/polly.core.8.6.2.nupkg.sha512",
     "/Users/mac/.nuget/packages/runtime.native.system/4.3.0/runtime.native.system.4.3.0.nupkg.sha512",
     "/Users/mac/.nuget/packages/runtime.native.system.io.compression/4.3.0/runtime.native.system.io.compression.4.3.0.nupkg.sha512",
     "/Users/mac/.nuget/packages/serilog/4.0.2-dev-02226/serilog.4.0.2-dev-02226.nupkg.sha512",

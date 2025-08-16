@@ -4,7 +4,7 @@ namespace DatabaseBackupUtility.Configs;
 
 public class SlackNotificationService(string webhookUrl) : INotificationService
 {
-    public async void SendNotification(string message)
+    public async Task SendNotification(string message)
     {
         using var httpClient = new HttpClient();
         var payload = new { text = message };

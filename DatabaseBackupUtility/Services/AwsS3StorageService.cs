@@ -20,6 +20,7 @@ public class AwsS3StorageService(IAmazonS3 s3Client, string bucketName) : IStora
         catch (Exception ex)
         {
             Console.WriteLine($"Error uploading file to S3: {ex.Message}");
+            throw;
         }
     }
 
@@ -34,6 +35,7 @@ public class AwsS3StorageService(IAmazonS3 s3Client, string bucketName) : IStora
         catch (Exception ex)
         {
             Console.WriteLine($"Error downloading file from S3: {ex.Message}");
+            throw;
         }
     }
 }
