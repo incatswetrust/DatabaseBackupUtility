@@ -55,6 +55,22 @@ var isNotify = true;
         }
     }
 
+    var storageConfig =
+        configuration.GetSection("Storage").Get<Storage>();
+    if (storageConfig is null)
+    {
+        Console.WriteLine("Storage configuration are required");
+        return;
+    }
+
+    var storageValidator = new StorageConfigValidator();
+    validationResult = storageValidator.Validate(storageConfig);
+    if (!validationResult.IsValid)
+    {
+        ShowErrors(validationResult.Errors);
+        return;
+    }
+
     Log.Logger = new LoggerConfiguration()
         .ReadFrom.Configuration(configuration)
         .WriteTo.Console()
@@ -86,49 +102,41 @@ var isNotify = true;
         {
             case "backup":
             {
-                var localPath =
-                    configuration.GetValue<string>("Storage:LocalPath");
-                if (localPath != null)
-                {
-                    var backupFilePath = Path.Combine(localPath, "backup.sql");
-                    await retryPolicy.ExecuteAsync(() => ProcessWithLoggingAsync(
-                            async () =>
-                            {
-                                await backupService?.CreateBackup(backupFilePath)!;
-                                await storageService?.SaveBackup(backupFilePath, backupFilePath)!;
-                            },
-                            logger!,
-                            notificationService!,
-                            "Starting backup process...",
-                            "Backup process completed successfully.",
-                            "Backup process failed"
-                        )
-                    );
-                }
+                var backupFilePath = Path.Combine(storageConfig.LocalPath, "backup.sql");
+                await retryPolicy.ExecuteAsync(() => ProcessWithLoggingAsync(
+                        async () =>
+                        {
+                            await backupService?.CreateBackup(backupFilePath)!;
+                            await storageService?.SaveBackup(backupFilePath, backupFilePath)!;
+                        },
+                        logger!,
+                        notificationService!,
+                        "Starting backup process...",
+                        "Backup process completed successfully.",
+                        "Backup process failed"
+                    )
+                );
+
 
                 break;
             }
             case "restore":
             {
-                var localPath =
-                    configuration.GetValue<string>("Storage:LocalPath");
-                if (localPath != null)
-                {
-                    var backupFilePath = Path.Combine(localPath, "backup.sql");
-                    await retryPolicy.ExecuteAsync(() => ProcessWithLoggingAsync(
-                            async () =>
-                            {
-                                await storageService?.LoadBackup(backupFilePath, backupFilePath)!;
-                                await restoreService?.RestoreDatabase(backupFilePath)!;
-                            },
-                            logger!,
-                            notificationService!,
-                            "Starting restore process...",
-                            "Restore process completed successfully.",
-                            "Restore process failed"
-                        )
-                    );
-                }
+                var backupFilePath = Path.Combine(storageConfig.LocalPath, "backup.sql");
+                await retryPolicy.ExecuteAsync(() => ProcessWithLoggingAsync(
+                        async () =>
+                        {
+                            await storageService?.LoadBackup(backupFilePath, backupFilePath)!;
+                            await restoreService?.RestoreDatabase(backupFilePath)!;
+                        },
+                        logger!,
+                        notificationService!,
+                        "Starting restore process...",
+                        "Restore process completed successfully.",
+                        "Restore process failed"
+                    )
+                );
+
 
                 break;
             }

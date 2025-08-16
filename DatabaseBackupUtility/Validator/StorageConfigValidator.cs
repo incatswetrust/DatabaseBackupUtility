@@ -3,7 +3,7 @@ using FluentValidation;
 
 namespace DatabaseBackupUtility.Configs;
 
-public class StorageConfigValidator:AbstractValidator<StorageConfig>
+public class StorageConfigValidator:AbstractValidator<Storage>
 {
     public StorageConfigValidator()
     {
