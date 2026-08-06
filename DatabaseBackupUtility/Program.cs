@@ -1,10 +1,12 @@
-﻿using DatabaseBackupUtility.Configs;
+﻿using Amazon.S3;
+using Azure.Storage.Blobs;
+using DatabaseBackupUtility.Configs;
 using DatabaseBackupUtility.Models;
 using FluentValidation.Results;
+using Google.Cloud.Storage.V1;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Polly;
-using Serilog;
 
 
     var isNotify = true;
@@ -71,17 +73,40 @@ using Serilog;
         return;
     }
 
-    Log.Logger = new LoggerConfiguration()
-        .ReadFrom.Configuration(configuration)
-        .WriteTo.Console()
-        .CreateLogger();
+    var loggingSettings = configuration.GetSection("Logging").Get<LoggingSettings>() ?? new LoggingSettings();
 
     await using var serviceProvider = new ServiceCollection()
         .AddSingleton<IDatabaseConnectionFactory, DatabaseConnectionFactory>()
         .AddSingleton(sp => sp.GetService<IDatabaseConnectionFactory>()!.CreateConnection(dbConfig))
         .AddSingleton<IConfiguration>(configuration)
-        .AddSingleton<ILoggingService, SerilogLoggingService>()
-        .AddSingleton<INotificationService>(_ => new SlackNotificationService(notificationConfig.SlackWebhookUrl))
+        .AddSingleton<ILoggingService>(_ => new SerilogLoggingService(loggingSettings))
+        .AddSingleton<INotificationService>(_ => isNotify
+            ? new SlackNotificationService(notificationConfig!.SlackWebhookUrl)
+            : new NullNotificationService())
+        .AddSingleton<IBackupService>(sp => dbConfig.Type switch
+        {
+            "MySql" => new MySqlBackupService(sp.GetRequiredService<IDatabaseConnection>()),
+            "PostgreSql" => new PostgreSqlBackupService(sp.GetRequiredService<IDatabaseConnection>()),
+            "MongoDb" => new MongoDbBackupService(sp.GetRequiredService<IDatabaseConnection>()),
+            _ => throw new InvalidOperationException($"Unsupported database type: {dbConfig.Type}")
+        })
+        .AddSingleton<IRestoreService>(sp => dbConfig.Type switch
+        {
+            "MySql" => new MySqlRestoreService(sp.GetRequiredService<IDatabaseConnection>()),
+            "PostgreSql" => new PostgreSqlRestoreService(sp.GetRequiredService<IDatabaseConnection>()),
+            "MongoDb" => new MongoDbRestoreService(sp.GetRequiredService<IDatabaseConnection>()),
+            _ => throw new InvalidOperationException($"Unsupported database type: {dbConfig.Type}")
+        })
+        .AddSingleton<IStorageService>(_ => storageConfig.Type switch
+        {
+            "Local" => new LocalStorageService(),
+            "S3" => new AwsS3StorageService(new AmazonS3Client(), storageConfig.Cloud.BucketName),
+            "Azure" => new AzureBlobStorageService(
+                new BlobServiceClient(Environment.GetEnvironmentVariable("AZURE_STORAGE_CONNECTION_STRING")),
+                storageConfig.Cloud.BucketName),
+            "Google" => new GoogleCloudStorageService(StorageClient.Create(), storageConfig.Cloud.BucketName),
+            _ => throw new InvalidOperationException($"Unsupported storage type: {storageConfig.Type}")
+        })
         .BuildServiceProvider();
 
     var logger = serviceProvider.GetService<ILoggingService>();
