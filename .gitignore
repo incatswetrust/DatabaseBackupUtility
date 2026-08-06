@@ -1,0 +1,23 @@
+## .NET build artifacts
+bin/
+obj/
+out/
+
+## Visual Studio / Rider / VS Code
+.vs/
+.vscode/
+*.user
+*.suo
+
+## JetBrains Rider / IntelliJ
+.idea/
+
+## macOS
+.DS_Store
+
+## NuGet
+*.nupkg
+packages/
+
+## Logs
+*.log
