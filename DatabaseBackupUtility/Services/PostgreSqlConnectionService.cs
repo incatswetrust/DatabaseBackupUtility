@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Npgsql;
 
 namespace DatabaseBackupUtility.Configs;
@@ -44,21 +45,33 @@ public class PostgreSqlConnectionService : IDatabaseConnection
 
     public async Task Backup(string backupFilePath)
     {
-        await Task.Run(() =>
-        {
-            var backupCommand = $"pg_dump --file \"{backupFilePath}\" --dbname \"{_connectionString}\"";
-            System.Diagnostics.Process.Start("bash", $"-c \"{backupCommand}\"");
-            Console.WriteLine($"Backup created at {backupFilePath}");
-        });
+        var backupCommand = $"pg_dump --file \"{backupFilePath}\" --dbname \"{_connectionString}\"";
+        await ExecuteCommand(backupCommand);
+        Console.WriteLine($"Backup created at {backupFilePath}");
     }
 
     public async Task Restore(string backupFilePath)
     {
-        await Task.Run(() =>
+        var restoreCommand = $"psql --file \"{backupFilePath}\" --dbname \"{_connectionString}\"";
+        await ExecuteCommand(restoreCommand);
+        Console.WriteLine($"Database restored from {backupFilePath}");
+    }
+
+    private static async Task ExecuteCommand(string command)
+    {
+        var processInfo = new ProcessStartInfo("bash", $"-c \"{command}\"")
         {
-            var restoreCommand = $"psql --file \"{backupFilePath}\" --dbname \"{_connectionString}\"";
-            System.Diagnostics.Process.Start("bash", $"-c \"{restoreCommand}\"");
-            Console.WriteLine($"Database restored from {backupFilePath}");
-        });
+            RedirectStandardError = true,
+            UseShellExecute = false
+        };
+
+        using var process = Process.Start(processInfo)!;
+        await process.WaitForExitAsync();
+
+        if (process.ExitCode != 0)
+        {
+            var error = await process.StandardError.ReadToEndAsync();
+            throw new InvalidOperationException($"Command failed (exit {process.ExitCode}): {error}");
+        }
     }
 }

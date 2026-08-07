@@ -41,7 +41,7 @@ public class MySqlConnectionService : IDatabaseConnection
 
     public async Task Connect()
     {
-        await _connection.ChangeDatabaseAsync(_database);
+        await _connection.OpenAsync();
         Console.WriteLine("Connected to MySQL database.");
     }
     

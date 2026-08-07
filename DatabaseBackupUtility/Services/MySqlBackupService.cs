@@ -4,8 +4,8 @@ public class MySqlBackupService(IDatabaseConnection dbConnection) : IBackupServi
 {
     public async Task CreateBackup(string backupFilePath)
     {
-        dbConnection.Connect();
-        dbConnection.Backup(backupFilePath);
-        dbConnection.Disconnect();
+        await dbConnection.Connect();
+        await dbConnection.Backup(backupFilePath);
+        await dbConnection.Disconnect();
     }
 }
