@@ -4,10 +4,10 @@ public class MySqlRestoreService(IDatabaseConnection dbConnection) : IRestoreSer
 {
     public async Task RestoreDatabase(string backupFilePath)
     {
-        dbConnection.Connect();
+        await dbConnection.Connect();
         try
         {
-            dbConnection.Restore(backupFilePath);
+            await dbConnection.Restore(backupFilePath);
             Console.WriteLine($"Database restored successfully from {backupFilePath}");
         }
         catch (Exception ex)
@@ -17,7 +17,7 @@ public class MySqlRestoreService(IDatabaseConnection dbConnection) : IRestoreSer
         }
         finally
         {
-            dbConnection.Disconnect();
+            await dbConnection.Disconnect();
         }
     }
 }
