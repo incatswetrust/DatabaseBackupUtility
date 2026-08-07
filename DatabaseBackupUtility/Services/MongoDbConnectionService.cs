@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using MongoDB.Driver;
 namespace DatabaseBackupUtility.Configs;
 
@@ -42,24 +43,36 @@ public class MongoDbConnectionService : IDatabaseConnection
     public async Task Backup(string backupFilePath)
     {
         // Using the `mongodump` utility
-        await Task.Run(() =>
-        {
-            var backupCommand =
-                $"mongodump --uri=\"{_client.Settings.Server}\" --db=\"{_database.DatabaseNamespace.DatabaseName}\" --out=\"{backupFilePath}\"";
-            System.Diagnostics.Process.Start("bash", $"-c \"{backupCommand}\"");
-            Console.WriteLine($"Backup created at {backupFilePath}");
-        });
+        var backupCommand =
+            $"mongodump --uri=\"{_client.Settings.Server}\" --db=\"{_database.DatabaseNamespace.DatabaseName}\" --out=\"{backupFilePath}\"";
+        await ExecuteCommand(backupCommand);
+        Console.WriteLine($"Backup created at {backupFilePath}");
     }
 
     public async Task Restore(string backupFilePath)
     {
         // Using the `mongorestore` utility
-        await Task.Run(() =>
+        var restoreCommand =
+            $"mongorestore --uri=\"{_client.Settings.Server}\" --db=\"{_database.DatabaseNamespace.DatabaseName}\" \"{backupFilePath}\"";
+        await ExecuteCommand(restoreCommand);
+        Console.WriteLine($"Database restored from {backupFilePath}");
+    }
+
+    private static async Task ExecuteCommand(string command)
+    {
+        var processInfo = new ProcessStartInfo("bash", $"-c \"{command}\"")
         {
-            var restoreCommand =
-                $"mongorestore --uri=\"{_client.Settings.Server}\" --db=\"{_database.DatabaseNamespace.DatabaseName}\" \"{backupFilePath}\"";
-            System.Diagnostics.Process.Start("bash", $"-c \"{restoreCommand}\"");
-            Console.WriteLine($"Database restored from {backupFilePath}");
-        });
+            RedirectStandardError = true,
+            UseShellExecute = false
+        };
+
+        using var process = Process.Start(processInfo)!;
+        await process.WaitForExitAsync();
+
+        if (process.ExitCode != 0)
+        {
+            var error = await process.StandardError.ReadToEndAsync();
+            throw new InvalidOperationException($"Command failed (exit {process.ExitCode}): {error}");
+        }
     }
 }
