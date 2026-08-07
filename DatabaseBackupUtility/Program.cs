@@ -125,12 +125,13 @@ using Polly;
         {
             case "backup":
             {
+                var workingBackupPath = Path.Combine(Path.GetTempPath(), $"backup_{Guid.NewGuid()}.sql");
                 var backupFilePath = Path.Combine(storageConfig.LocalPath, "backup.sql");
                 await retryPolicy.ExecuteAsync(() => ProcessWithLoggingAsync(
                         async () =>
                         {
-                            await backupService?.CreateBackup(backupFilePath)!;
-                            await storageService?.SaveBackup(backupFilePath, backupFilePath)!;
+                            await backupService?.CreateBackup(workingBackupPath)!;
+                            await storageService?.SaveBackup(workingBackupPath, backupFilePath)!;
                         },
                         logger!,
                         notificationService!,
@@ -146,11 +147,12 @@ using Polly;
             case "restore":
             {
                 var backupFilePath = Path.Combine(storageConfig.LocalPath, "backup.sql");
+                var workingBackupPath = Path.Combine(Path.GetTempPath(), $"backup_{Guid.NewGuid()}.sql");
                 await retryPolicy.ExecuteAsync(() => ProcessWithLoggingAsync(
                         async () =>
                         {
-                            await storageService?.LoadBackup(backupFilePath, backupFilePath)!;
-                            await restoreService?.RestoreDatabase(backupFilePath)!;
+                            await storageService?.LoadBackup(backupFilePath, workingBackupPath)!;
+                            await restoreService?.RestoreDatabase(workingBackupPath)!;
                         },
                         logger!,
                         notificationService!,
