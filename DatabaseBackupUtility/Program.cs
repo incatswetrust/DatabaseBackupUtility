@@ -73,6 +73,11 @@ using Polly;
         return;
     }
 
+    if (storageConfig.Type == "Local" && !Directory.Exists(storageConfig.LocalPath))
+    {
+        Directory.CreateDirectory(storageConfig.LocalPath);
+    }
+
     var loggingSettings = configuration.GetSection("Logging").Get<LoggingSettings>() ?? new LoggingSettings();
 
     await using var serviceProvider = new ServiceCollection()
