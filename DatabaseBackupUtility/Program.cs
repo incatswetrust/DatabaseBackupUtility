@@ -24,6 +24,12 @@ using Polly;
         return;
     }
 
+    if (!File.Exists(Path.Combine(Directory.GetCurrentDirectory(), configPath)))
+    {
+        Console.WriteLine($"Configuration file not found: {configPath}");
+        return;
+    }
+
     var configuration = new ConfigurationBuilder()
         .SetBasePath(Directory.GetCurrentDirectory())
         .AddJsonFile(configPath, optional: false, reloadOnChange: true)
