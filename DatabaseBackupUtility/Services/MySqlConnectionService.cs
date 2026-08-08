@@ -54,24 +54,42 @@ public class MySqlConnectionService : IDatabaseConnection
 
     public async Task Backup(string backupFilePath)
     {
-        await Task.Run(() =>
+        var cnfPath = Path.GetTempFileName();
+        try
         {
+            await File.WriteAllTextAsync(cnfPath, $"[client]\npassword={_password}\n");
             var backupCommand =
-                $"mysqldump --databases {_database} --user={_username} --password={_password} > {backupFilePath}";
-            ExecuteCommand(backupCommand);
-            Console.WriteLine($"Backup created at {backupFilePath}");
-        });
+                $"mysqldump --defaults-extra-file={cnfPath} --databases {_database} --user={_username} > {backupFilePath}";
+            await Task.Run(() =>
+            {
+                ExecuteCommand(backupCommand);
+                Console.WriteLine($"Backup created at {backupFilePath}");
+            });
+        }
+        finally
+        {
+            File.Delete(cnfPath);
+        }
     }
 
     public async Task Restore(string backupFilePath)
     {
-        await Task.Run(() =>
+        var cnfPath = Path.GetTempFileName();
+        try
         {
+            await File.WriteAllTextAsync(cnfPath, $"[client]\npassword={_password}\n");
             var restoreCommand =
-                $"mysql --database={_database} --user={_username} --password={_password} < {backupFilePath}";
-            ExecuteCommand(restoreCommand);
-            Console.WriteLine($"Database restored from {backupFilePath}");
-        });
+                $"mysql --defaults-extra-file={cnfPath} --database={_database} --user={_username} < {backupFilePath}";
+            await Task.Run(() =>
+            {
+                ExecuteCommand(restoreCommand);
+                Console.WriteLine($"Database restored from {backupFilePath}");
+            });
+        }
+        finally
+        {
+            File.Delete(cnfPath);
+        }
     }
 
     private void ExecuteCommand(string command)
