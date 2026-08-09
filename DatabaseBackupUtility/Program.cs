@@ -136,9 +136,9 @@ using Polly;
             {
                 var compress = parser.HasFlag("--compress");
                 var workingBackupPath = Path.Combine(Path.GetTempPath(), $"backup_{Guid.NewGuid()}.sql");
-                var timestamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
-                var backupFilePath = Path.Combine(storageConfig.LocalPath,
-                    $"backup_{dbConfig.DatabaseName}_{timestamp}.sql{(compress ? ".gz" : string.Empty)}");
+                var outputOption = parser.GetOption("--output");
+                var backupFilePath = outputOption ?? Path.Combine(storageConfig.LocalPath,
+                    $"backup_{dbConfig.DatabaseName}_{DateTime.UtcNow:yyyyMMdd_HHmmss}.sql{(compress ? ".gz" : string.Empty)}");
                 await retryPolicy.ExecuteAsync(() => ProcessWithLoggingAsync(
                         async () =>
                         {
