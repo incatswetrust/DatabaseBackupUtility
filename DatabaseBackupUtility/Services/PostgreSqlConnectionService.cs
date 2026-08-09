@@ -7,18 +7,21 @@ public class PostgreSqlConnectionService : IDatabaseConnection
 {
     private readonly string _connectionString;
     private readonly string _host;
+    private readonly int? _port;
     private readonly string _database;
     private readonly string _username;
     private readonly string _password;
     private NpgsqlConnection _connection;
 
-    public PostgreSqlConnectionService(string host, string database, string username, string password)
+    public PostgreSqlConnectionService(string host, int? port, string database, string username, string password)
     {
         _host = host;
+        _port = port;
         _database = database;
         _username = username;
         _password = password;
-        _connectionString = $"Host={host};Database={database};Username={username};Password={password};";
+        var portSegment = port.HasValue ? $"Port={port};" : string.Empty;
+        _connectionString = $"Host={host};{portSegment}Database={database};Username={username};Password={password};";
     }
 
     public async Task<bool> TestConnection()
@@ -60,18 +63,22 @@ public class PostgreSqlConnectionService : IDatabaseConnection
 
     public async Task Backup(string backupFilePath, CancellationToken cancellationToken = default)
     {
-        var dbConnectionString = $"Host={_host};Database={_database};Username={_username}";
-        var backupCommand = $"pg_dump --file \"{backupFilePath}\" --dbname \"{dbConnectionString}\"";
+        var backupCommand = $"pg_dump --file \"{backupFilePath}\" --dbname \"{DbNameConnectionString()}\"";
         await ProcessRunner.RunAsync("pg_dump", backupCommand, cancellationToken, PgPasswordEnvironment());
         Console.WriteLine($"Backup created at {backupFilePath}");
     }
 
     public async Task Restore(string backupFilePath, CancellationToken cancellationToken = default)
     {
-        var dbConnectionString = $"Host={_host};Database={_database};Username={_username}";
-        var restoreCommand = $"psql --file \"{backupFilePath}\" --dbname \"{dbConnectionString}\"";
+        var restoreCommand = $"psql --file \"{backupFilePath}\" --dbname \"{DbNameConnectionString()}\"";
         await ProcessRunner.RunAsync("psql", restoreCommand, cancellationToken, PgPasswordEnvironment());
         Console.WriteLine($"Database restored from {backupFilePath}");
+    }
+
+    private string DbNameConnectionString()
+    {
+        var portSegment = _port.HasValue ? $"Port={_port};" : string.Empty;
+        return $"Host={_host};{portSegment}Database={_database};Username={_username}";
     }
 
     private Dictionary<string, string> PgPasswordEnvironment() => new() { ["PGPASSWORD"] = _password };
