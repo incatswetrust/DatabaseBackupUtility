@@ -1,6 +1,6 @@
-using System.Globalization;
+using DatabaseBackupUtility.Services.Interfaces;
 
-namespace DatabaseBackupUtility.Configs;
+namespace DatabaseBackupUtility.Services;
 
 public class MongoDbBackupService(IDatabaseConnection dbConnection) : IBackupService
 {

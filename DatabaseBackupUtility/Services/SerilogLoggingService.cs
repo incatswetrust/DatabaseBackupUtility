@@ -1,8 +1,9 @@
 using DatabaseBackupUtility.Models;
 using Microsoft.Extensions.Configuration;
 using Serilog;
+using DatabaseBackupUtility.Services.Interfaces;
 
-namespace DatabaseBackupUtility.Configs;
+namespace DatabaseBackupUtility.Services;
 
 public class SerilogLoggingService : ILoggingService
 {

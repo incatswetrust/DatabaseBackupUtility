@@ -1,4 +1,4 @@
-namespace DatabaseBackupUtility.Configs;
+namespace DatabaseBackupUtility.Services.Interfaces;
 
 public interface IDatabaseConnection
 {

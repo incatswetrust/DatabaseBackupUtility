@@ -1,6 +1,7 @@
 using Azure.Storage.Blobs;
+using DatabaseBackupUtility.Services.Interfaces;
 
-namespace DatabaseBackupUtility.Configs;
+namespace DatabaseBackupUtility.Services;
 
 public class AzureBlobStorageService(BlobServiceClient blobServiceClient, string containerName) : IStorageService
 {

@@ -1,6 +1,7 @@
 using Google.Cloud.Storage.V1;
+using DatabaseBackupUtility.Services.Interfaces;
 
-namespace DatabaseBackupUtility.Configs;
+namespace DatabaseBackupUtility.Services;
 
 public class GoogleCloudStorageService(StorageClient storageClient, string bucketName) : IStorageService
 {
