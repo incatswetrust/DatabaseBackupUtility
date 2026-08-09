@@ -41,8 +41,15 @@ public class MySqlConnectionService : IDatabaseConnection
 
     public async Task Connect()
     {
-        await _connection.OpenAsync();
-        Console.WriteLine("Connected to MySQL database.");
+        try
+        {
+            await _connection.OpenAsync();
+            Console.WriteLine("Connected to MySQL database.");
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException(ErrorMessages.DescribeConnectionFailure("MySQL", _host, ex.Message), ex);
+        }
     }
 
     public async Task Disconnect()

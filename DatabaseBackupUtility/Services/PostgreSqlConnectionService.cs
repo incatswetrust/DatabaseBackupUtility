@@ -37,9 +37,16 @@ public class PostgreSqlConnectionService : IDatabaseConnection
 
     public async Task Connect()
     {
-        _connection = new NpgsqlConnection(_connectionString);
-        await _connection.OpenAsync();
-        Console.WriteLine("Connected to PostgreSQL database.");
+        try
+        {
+            _connection = new NpgsqlConnection(_connectionString);
+            await _connection.OpenAsync();
+            Console.WriteLine("Connected to PostgreSQL database.");
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException(ErrorMessages.DescribeConnectionFailure("PostgreSQL", _host, ex.Message), ex);
+        }
     }
 
     public async Task Disconnect()

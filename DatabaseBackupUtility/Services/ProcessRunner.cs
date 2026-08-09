@@ -44,6 +44,6 @@ internal static class ProcessRunner
 
         if (process.ExitCode != 0)
             throw new InvalidOperationException(
-                $"'{toolName}' failed (exit {process.ExitCode}): {errorOutput}".TrimEnd());
+                ErrorMessages.DescribeProcessFailure(toolName, process.ExitCode, errorOutput.ToString()));
     }
 }
