@@ -4,7 +4,7 @@
 
 ## Overview
 
-The **Database Backup Utility v.1.0.0** is a versatile tool designed to simplify the process of creating and restoring backups for various database management systems (DBMS). This tool is especially useful for developers and administrators who need a reliable way to manage database backups via a command-line interface.
+The **Database Backup Utility v.2.0.0** is a versatile tool designed to simplify the process of creating and restoring backups for various database management systems (DBMS). This tool is especially useful for developers and administrators who need a reliable way to manage database backups via a command-line interface.
 
 ## Features
 
@@ -177,5 +177,9 @@ Lists backup files for the configured database found in `Storage.LocalPath`, new
 ```
 
 Never commit a `config.json`/`appsettings.json` with real credentials — `.gitignore` excludes `appsettings*.json` (aside from the checked-in `appsettings.example.json` template) for this reason.
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
 
 https://roadmap.sh/projects/database-backup-utility
