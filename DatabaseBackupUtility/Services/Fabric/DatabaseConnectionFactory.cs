@@ -1,7 +1,8 @@
 using DatabaseBackupUtility.Models;
-using Microsoft.Extensions.Configuration;
+using DatabaseBackupUtility.Services;
+using DatabaseBackupUtility.Services.Interfaces;
 
-namespace DatabaseBackupUtility.Configs;
+namespace DatabaseBackupUtility.Factories;
 
 interface IDatabaseConnectionFactory
 {

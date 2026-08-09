@@ -1,13 +1,13 @@
 using DatabaseBackupUtility.Models;
 using FluentValidation;
 
-namespace DatabaseBackupUtility.Configs;
+namespace DatabaseBackupUtility.Validators;
 
-public class StorageConfigValidator:AbstractValidator<Storage>
+public class StorageConfigValidator : AbstractValidator<Storage>
 {
     public StorageConfigValidator()
     {
-        RuleFor(c=> c.Type).NotEmpty().WithMessage("Storage type is required.");
+        RuleFor(c => c.Type).NotEmpty().WithMessage("Storage type is required.");
 
         When(c => c.Type == "Local", () =>
         {

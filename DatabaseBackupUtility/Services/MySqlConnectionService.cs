@@ -1,7 +1,8 @@
 using System.Diagnostics;
 using MySqlConnector;
+using DatabaseBackupUtility.Services.Interfaces;
 
-namespace DatabaseBackupUtility.Configs;
+namespace DatabaseBackupUtility.Services;
 
 public class MySqlConnectionService : IDatabaseConnection
 {
@@ -25,7 +26,7 @@ public class MySqlConnectionService : IDatabaseConnection
         return $"Server={_host};Database={_database};User={_username};Password={_password};";
     }
 
-    public async Task <bool> TestConnection()
+    public async Task<bool> TestConnection()
     {
         try
         {
@@ -44,7 +45,7 @@ public class MySqlConnectionService : IDatabaseConnection
         await _connection.OpenAsync();
         Console.WriteLine("Connected to MySQL database.");
     }
-    
+
     public async Task Disconnect()
     {
         if (_connection.State != System.Data.ConnectionState.Open) return;

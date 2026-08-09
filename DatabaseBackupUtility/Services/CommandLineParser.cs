@@ -1,4 +1,4 @@
-namespace DatabaseBackupUtility.Configs;
+namespace DatabaseBackupUtility.Services;
 
 public class CommandLineParser(string[]? args)
 {

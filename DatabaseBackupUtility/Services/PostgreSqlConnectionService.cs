@@ -1,7 +1,8 @@
 using System.Diagnostics;
 using Npgsql;
+using DatabaseBackupUtility.Services.Interfaces;
 
-namespace DatabaseBackupUtility.Configs;
+namespace DatabaseBackupUtility.Services;
 
 public class PostgreSqlConnectionService : IDatabaseConnection
 {
@@ -21,7 +22,7 @@ public class PostgreSqlConnectionService : IDatabaseConnection
         _connectionString = $"Host={host};Database={database};Username={username};Password={password};";
     }
 
-    public async Task< bool> TestConnection()
+    public async Task<bool> TestConnection()
     {
         try
         {

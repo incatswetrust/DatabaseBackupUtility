@@ -1,7 +1,7 @@
 using DatabaseBackupUtility.Models;
 using FluentValidation;
 
-namespace DatabaseBackupUtility.Configs;
+namespace DatabaseBackupUtility.Validators;
 
 public class DatabaseConfigValidator : AbstractValidator<DatabaseConfig>
 {

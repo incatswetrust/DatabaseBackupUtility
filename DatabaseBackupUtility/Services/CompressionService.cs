@@ -1,6 +1,6 @@
 using System.IO.Compression;
 
-namespace DatabaseBackupUtility.Configs;
+namespace DatabaseBackupUtility.Services;
 
 public static class CompressionService
 {

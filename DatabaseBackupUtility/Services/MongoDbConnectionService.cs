@@ -1,6 +1,8 @@
 using System.Diagnostics;
 using MongoDB.Driver;
-namespace DatabaseBackupUtility.Configs;
+using DatabaseBackupUtility.Services.Interfaces;
+
+namespace DatabaseBackupUtility.Services;
 
 public class MongoDbConnectionService : IDatabaseConnection
 {
@@ -15,7 +17,7 @@ public class MongoDbConnectionService : IDatabaseConnection
         _database = _client.GetDatabase(databaseName);
     }
 
-    public async Task <bool> TestConnection()
+    public async Task<bool> TestConnection()
     {
         try
         {
