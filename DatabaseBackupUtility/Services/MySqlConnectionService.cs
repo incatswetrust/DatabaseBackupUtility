@@ -52,19 +52,16 @@ public class MySqlConnectionService : IDatabaseConnection
         Console.WriteLine("Disconnected from MySQL database.");
     }
 
-    public async Task Backup(string backupFilePath)
+    public async Task Backup(string backupFilePath, CancellationToken cancellationToken = default)
     {
         var cnfPath = Path.GetTempFileName();
         try
         {
-            await File.WriteAllTextAsync(cnfPath, $"[client]\npassword={_password}\n");
+            await File.WriteAllTextAsync(cnfPath, $"[client]\npassword={_password}\n", cancellationToken);
             var backupCommand =
                 $"mysqldump --defaults-extra-file={cnfPath} --databases {_database} --user={_username} > {backupFilePath}";
-            await Task.Run(() =>
-            {
-                ExecuteCommand(backupCommand);
-                Console.WriteLine($"Backup created at {backupFilePath}");
-            });
+            await ExecuteCommand(backupCommand, cancellationToken);
+            Console.WriteLine($"Backup created at {backupFilePath}");
         }
         finally
         {
@@ -72,19 +69,16 @@ public class MySqlConnectionService : IDatabaseConnection
         }
     }
 
-    public async Task Restore(string backupFilePath)
+    public async Task Restore(string backupFilePath, CancellationToken cancellationToken = default)
     {
         var cnfPath = Path.GetTempFileName();
         try
         {
-            await File.WriteAllTextAsync(cnfPath, $"[client]\npassword={_password}\n");
+            await File.WriteAllTextAsync(cnfPath, $"[client]\npassword={_password}\n", cancellationToken);
             var restoreCommand =
                 $"mysql --defaults-extra-file={cnfPath} --database={_database} --user={_username} < {backupFilePath}";
-            await Task.Run(() =>
-            {
-                ExecuteCommand(restoreCommand);
-                Console.WriteLine($"Database restored from {backupFilePath}");
-            });
+            await ExecuteCommand(restoreCommand, cancellationToken);
+            Console.WriteLine($"Database restored from {backupFilePath}");
         }
         finally
         {
@@ -92,7 +86,7 @@ public class MySqlConnectionService : IDatabaseConnection
         }
     }
 
-    private void ExecuteCommand(string command)
+    private static async Task ExecuteCommand(string command, CancellationToken cancellationToken)
     {
         var processInfo = new ProcessStartInfo("bash", $"-c \"{command}\"")
         {
@@ -102,20 +96,20 @@ public class MySqlConnectionService : IDatabaseConnection
             CreateNoWindow = true
         };
 
-        using var process = Process.Start(processInfo);
-        process?.WaitForExit();
+        using var process = Process.Start(processInfo)!;
+        await process.WaitForExitAsync(cancellationToken);
 
-        var output = process?.StandardOutput.ReadToEnd();
-        var error = process?.StandardError.ReadToEnd();
+        var output = await process.StandardOutput.ReadToEndAsync(cancellationToken);
+        var error = await process.StandardError.ReadToEndAsync(cancellationToken);
 
         if (!string.IsNullOrEmpty(output))
         {
             Console.WriteLine(output);
         }
 
-        if (!string.IsNullOrEmpty(error))
+        if (process.ExitCode != 0)
         {
-            Console.WriteLine($"Error: {error}");
+            throw new InvalidOperationException($"Command failed (exit {process.ExitCode}): {error}");
         }
     }
 }

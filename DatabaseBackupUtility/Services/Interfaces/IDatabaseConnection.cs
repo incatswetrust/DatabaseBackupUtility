@@ -6,7 +6,7 @@ public interface IDatabaseConnection
     Task Connect();
     Task Disconnect();
     // Adding a method to execute the backup command (data export)
-    Task Backup(string backupFilePath);
+    Task Backup(string backupFilePath, CancellationToken cancellationToken = default);
     // Adding a method to execute the recovery command (data import)
-    Task Restore(string backupFilePath);
+    Task Restore(string backupFilePath, CancellationToken cancellationToken = default);
 }

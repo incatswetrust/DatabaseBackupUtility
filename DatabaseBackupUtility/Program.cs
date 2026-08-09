@@ -126,10 +126,19 @@ using Polly;
     var restoreService = serviceProvider.GetService<IRestoreService>();
     var storageService = serviceProvider.GetService<IStorageService>();
 
+    using var cancellationTokenSource = new CancellationTokenSource();
+    Console.CancelKeyPress += (_, cancelEventArgs) =>
+    {
+        cancelEventArgs.Cancel = true;
+        Console.WriteLine("Cancellation requested, stopping...");
+        cancellationTokenSource.Cancel();
+    };
+    var cancellationToken = cancellationTokenSource.Token;
+
     try
     {
         var retryPolicy = Policy
-            .Handle<Exception>()
+            .Handle<Exception>(ex => ex is not OperationCanceledException)
             .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)));
 
         switch (command)
@@ -144,7 +153,7 @@ using Polly;
                 await retryPolicy.ExecuteAsync(() => ProcessWithLoggingAsync(
                         async () =>
                         {
-                            await backupService?.CreateBackup(workingBackupPath)!;
+                            await backupService?.CreateBackup(workingBackupPath, cancellationToken)!;
                             var uploadPath = workingBackupPath;
                             if (compress)
                             {
@@ -190,7 +199,7 @@ using Polly;
                                 await CompressionService.DecompressFileAsync(downloadPath, workingBackupPath);
                                 File.Delete(downloadPath);
                             }
-                            await restoreService?.RestoreDatabase(workingBackupPath)!;
+                            await restoreService?.RestoreDatabase(workingBackupPath, cancellationToken)!;
                         },
                         logger!,
                         notificationService!,
@@ -204,6 +213,10 @@ using Polly;
                 break;
             }
         }
+    }
+    catch (OperationCanceledException)
+    {
+        Console.WriteLine("Operation was cancelled.");
     }
     catch (Exception ex)
     {

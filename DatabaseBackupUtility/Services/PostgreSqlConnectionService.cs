@@ -51,23 +51,23 @@ public class PostgreSqlConnectionService : IDatabaseConnection
         }
     }
 
-    public async Task Backup(string backupFilePath)
+    public async Task Backup(string backupFilePath, CancellationToken cancellationToken = default)
     {
         var dbConnectionString = $"Host={_host};Database={_database};Username={_username}";
         var backupCommand = $"pg_dump --file \"{backupFilePath}\" --dbname \"{dbConnectionString}\"";
-        await ExecuteCommand(backupCommand);
+        await ExecuteCommand(backupCommand, cancellationToken);
         Console.WriteLine($"Backup created at {backupFilePath}");
     }
 
-    public async Task Restore(string backupFilePath)
+    public async Task Restore(string backupFilePath, CancellationToken cancellationToken = default)
     {
         var dbConnectionString = $"Host={_host};Database={_database};Username={_username}";
         var restoreCommand = $"psql --file \"{backupFilePath}\" --dbname \"{dbConnectionString}\"";
-        await ExecuteCommand(restoreCommand);
+        await ExecuteCommand(restoreCommand, cancellationToken);
         Console.WriteLine($"Database restored from {backupFilePath}");
     }
 
-    private async Task ExecuteCommand(string command)
+    private async Task ExecuteCommand(string command, CancellationToken cancellationToken)
     {
         var processInfo = new ProcessStartInfo("bash", $"-c \"{command}\"")
         {
@@ -77,11 +77,11 @@ public class PostgreSqlConnectionService : IDatabaseConnection
         processInfo.Environment["PGPASSWORD"] = _password;
 
         using var process = Process.Start(processInfo)!;
-        await process.WaitForExitAsync();
+        await process.WaitForExitAsync(cancellationToken);
 
         if (process.ExitCode != 0)
         {
-            var error = await process.StandardError.ReadToEndAsync();
+            var error = await process.StandardError.ReadToEndAsync(cancellationToken);
             throw new InvalidOperationException($"Command failed (exit {process.ExitCode}): {error}");
         }
     }
