@@ -223,6 +223,14 @@ using Polly;
 
                 break;
             }
+            case "test-connection":
+            {
+                var canConnect = await dbConnection!.TestConnection();
+                Console.WriteLine(canConnect
+                    ? "Connection to the database succeeded."
+                    : "Connection to the database failed.");
+                break;
+            }
         }
     }
     catch (OperationCanceledException)
