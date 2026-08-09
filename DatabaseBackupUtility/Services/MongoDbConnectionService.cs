@@ -30,18 +30,18 @@ public class MongoDbConnectionService : IDatabaseConnection
         }
     }
 
-    public async Task Connect()
+    public Task Connect()
     {
         // MongoDB automatically manages the connection
-        await Task.Delay(1);
         Console.WriteLine("Connected to MongoDB database.");
+        return Task.CompletedTask;
     }
 
-    public async Task Disconnect()
+    public Task Disconnect()
     {
         // MongoDB driver does not require explicit connection closing
-        await Task.Delay(1);
         Console.WriteLine("Disconnected from MongoDB database.");
+        return Task.CompletedTask;
     }
 
     public async Task Backup(string backupFilePath, CancellationToken cancellationToken = default)
