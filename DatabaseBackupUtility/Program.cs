@@ -125,24 +125,56 @@ using Polly;
     var backupService = serviceProvider.GetService<IBackupService>();
     var restoreService = serviceProvider.GetService<IRestoreService>();
     var storageService = serviceProvider.GetService<IStorageService>();
+    var dbConnection = serviceProvider.GetService<IDatabaseConnection>();
+
+    if (parser.HasFlag("--dry-run"))
+    {
+        Console.WriteLine("Dry run: configuration is valid.");
+        var canConnect = await dbConnection!.TestConnection();
+        Console.WriteLine(canConnect
+            ? "Dry run: connection to the database succeeded."
+            : "Dry run: connection to the database failed.");
+        return;
+    }
+
+    using var cancellationTokenSource = new CancellationTokenSource();
+    Console.CancelKeyPress += (_, cancelEventArgs) =>
+    {
+        cancelEventArgs.Cancel = true;
+        Console.WriteLine("Cancellation requested, stopping...");
+        cancellationTokenSource.Cancel();
+    };
+    var cancellationToken = cancellationTokenSource.Token;
 
     try
     {
         var retryPolicy = Policy
-            .Handle<Exception>()
+            .Handle<Exception>(ex => ex is not OperationCanceledException)
             .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)));
 
         switch (command)
         {
             case "backup":
             {
+                var compress = parser.HasFlag("--compress");
                 var workingBackupPath = Path.Combine(Path.GetTempPath(), $"backup_{Guid.NewGuid()}.sql");
-                var backupFilePath = Path.Combine(storageConfig.LocalPath, "backup.sql");
+                var timestamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
+                var backupFilePath = Path.Combine(storageConfig.LocalPath,
+                    $"backup_{dbConfig.DatabaseName}_{timestamp}.sql{(compress ? ".gz" : string.Empty)}");
                 await retryPolicy.ExecuteAsync(() => ProcessWithLoggingAsync(
                         async () =>
                         {
-                            await backupService?.CreateBackup(workingBackupPath)!;
-                            await storageService?.SaveBackup(workingBackupPath, backupFilePath)!;
+                            await backupService?.CreateBackup(workingBackupPath, cancellationToken)!;
+                            var uploadPath = workingBackupPath;
+                            if (compress)
+                            {
+                                uploadPath = workingBackupPath + ".gz";
+                                await CompressionService.CompressFileAsync(workingBackupPath, uploadPath);
+                                File.Delete(workingBackupPath);
+                            }
+                            await storageService?.SaveBackup(uploadPath, backupFilePath)!;
+                            if (compress)
+                                File.Delete(uploadPath);
                         },
                         logger!,
                         notificationService!,
@@ -157,13 +189,28 @@ using Polly;
             }
             case "restore":
             {
-                var backupFilePath = Path.Combine(storageConfig.LocalPath, "backup.sql");
-                var workingBackupPath = Path.Combine(Path.GetTempPath(), $"backup_{Guid.NewGuid()}.sql");
+                var backupFilePath = ResolveBackupFilePath(storageConfig.LocalPath, dbConfig.DatabaseName,
+                    parser.GetOption("--file"));
+                if (backupFilePath is null)
+                {
+                    Console.WriteLine($"No backup file found for database '{dbConfig.DatabaseName}' in {storageConfig.LocalPath}. Use --file to specify one.");
+                    return;
+                }
+                var isCompressed = backupFilePath.EndsWith(".gz", StringComparison.OrdinalIgnoreCase);
+                var downloadPath = Path.Combine(Path.GetTempPath(), $"backup_{Guid.NewGuid()}.sql{(isCompressed ? ".gz" : string.Empty)}");
+                var workingBackupPath = isCompressed
+                    ? Path.Combine(Path.GetTempPath(), $"backup_{Guid.NewGuid()}.sql")
+                    : downloadPath;
                 await retryPolicy.ExecuteAsync(() => ProcessWithLoggingAsync(
                         async () =>
                         {
-                            await storageService?.LoadBackup(backupFilePath, workingBackupPath)!;
-                            await restoreService?.RestoreDatabase(workingBackupPath)!;
+                            await storageService?.LoadBackup(backupFilePath, downloadPath)!;
+                            if (isCompressed)
+                            {
+                                await CompressionService.DecompressFileAsync(downloadPath, workingBackupPath);
+                                File.Delete(downloadPath);
+                            }
+                            await restoreService?.RestoreDatabase(workingBackupPath, cancellationToken)!;
                         },
                         logger!,
                         notificationService!,
@@ -176,7 +223,19 @@ using Polly;
 
                 break;
             }
+            case "test-connection":
+            {
+                var canConnect = await dbConnection!.TestConnection();
+                Console.WriteLine(canConnect
+                    ? "Connection to the database succeeded."
+                    : "Connection to the database failed.");
+                break;
+            }
         }
+    }
+    catch (OperationCanceledException)
+    {
+        Console.WriteLine("Operation was cancelled.");
     }
     catch (Exception ex)
     {
@@ -211,6 +270,19 @@ using Polly;
                 await notification.SendNotification($"{errorMessage}: {ex.Message}");
             throw;
         }
+    }
+
+    string? ResolveBackupFilePath(string localPath, string databaseName, string? explicitFile)
+    {
+        if (!string.IsNullOrEmpty(explicitFile))
+            return Path.Combine(localPath, explicitFile);
+
+        if (!Directory.Exists(localPath))
+            return null;
+
+        return Directory.GetFiles(localPath, $"backup_{databaseName}_*.sql*")
+            .OrderByDescending(File.GetLastWriteTimeUtc)
+            .FirstOrDefault();
     }
 
     void ShowErrors(List<ValidationFailure> errors)

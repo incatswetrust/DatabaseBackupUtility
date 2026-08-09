@@ -2,25 +2,22 @@ namespace DatabaseBackupUtility.Configs;
 
 public class PostgreSqlRestoreService(IDatabaseConnection dbConnection) : IRestoreService
 {
-    public async Task RestoreDatabase(string backupFilePath)
+    public async Task RestoreDatabase(string backupFilePath, CancellationToken cancellationToken = default)
     {
-        await Task.Run(() =>
+        await dbConnection.Connect();
+        try
         {
-            dbConnection.Connect();
-            try
-            {
-                dbConnection.Restore(backupFilePath);
-                Console.WriteLine($"Database restored successfully from {backupFilePath}");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error during database restore: {ex.Message}");
-                throw;
-            }
-            finally
-            {
-                dbConnection.Disconnect();
-            }
-        });
+            await dbConnection.Restore(backupFilePath, cancellationToken);
+            Console.WriteLine($"Database restored successfully from {backupFilePath}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error during database restore: {ex.Message}");
+            throw;
+        }
+        finally
+        {
+            await dbConnection.Disconnect();
+        }
     }
 }
