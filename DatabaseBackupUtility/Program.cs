@@ -209,6 +209,34 @@ using Polly;
                     : "Connection to the database failed.");
                 break;
             }
+            case "list":
+            {
+                if (storageConfig.Type != "Local")
+                {
+                    Console.WriteLine($"Listing backups is only supported for Local storage (current type: {storageConfig.Type}).");
+                    break;
+                }
+
+                var backups = Directory.Exists(storageConfig.LocalPath)
+                    ? Directory.GetFiles(storageConfig.LocalPath, $"backup_{dbConfig.DatabaseName}_*.sql*")
+                        .OrderByDescending(File.GetLastWriteTimeUtc)
+                        .ToList()
+                    : [];
+
+                if (backups.Count == 0)
+                {
+                    Console.WriteLine($"No backups found for database '{dbConfig.DatabaseName}' in {storageConfig.LocalPath}.");
+                    break;
+                }
+
+                Console.WriteLine($"Backups for database '{dbConfig.DatabaseName}' in {storageConfig.LocalPath}:");
+                foreach (var backup in backups)
+                {
+                    var info = new FileInfo(backup);
+                    Console.WriteLine($"  {Path.GetFileName(backup)}  ({info.Length} bytes, {info.LastWriteTimeUtc:u})");
+                }
+                break;
+            }
         }
     }
     catch (OperationCanceledException)

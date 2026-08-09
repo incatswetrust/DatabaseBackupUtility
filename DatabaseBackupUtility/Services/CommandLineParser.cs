@@ -10,7 +10,7 @@ public class CommandLineParser(string[]? args)
             return false;
         }
         var command = args[0].ToLower();
-        if (command is "backup" or "restore" or "test-connection") return true;
+        if (command is "backup" or "restore" or "test-connection" or "list") return true;
         ShowUsage();
         return false;
 
@@ -44,6 +44,7 @@ public class CommandLineParser(string[]? args)
         Console.WriteLine("  DatabaseBackupUtility backup --config <path_to_config>");
         Console.WriteLine("  DatabaseBackupUtility restore --config <path_to_config>");
         Console.WriteLine("  DatabaseBackupUtility test-connection --config <path_to_config>");
+        Console.WriteLine("  DatabaseBackupUtility list --config <path_to_config>");
         Console.WriteLine("Options:");
         Console.WriteLine("  --config <path>  Specify the path to the configuration file.");
         Console.WriteLine("  --file <name>    Specify which backup file to restore.");
