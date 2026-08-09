@@ -125,6 +125,17 @@ using Polly;
     var backupService = serviceProvider.GetService<IBackupService>();
     var restoreService = serviceProvider.GetService<IRestoreService>();
     var storageService = serviceProvider.GetService<IStorageService>();
+    var dbConnection = serviceProvider.GetService<IDatabaseConnection>();
+
+    if (parser.HasFlag("--dry-run"))
+    {
+        Console.WriteLine("Dry run: configuration is valid.");
+        var canConnect = await dbConnection!.TestConnection();
+        Console.WriteLine(canConnect
+            ? "Dry run: connection to the database succeeded."
+            : "Dry run: connection to the database failed.");
+        return;
+    }
 
     using var cancellationTokenSource = new CancellationTokenSource();
     Console.CancelKeyPress += (_, cancelEventArgs) =>

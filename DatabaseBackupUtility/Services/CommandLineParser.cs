@@ -47,5 +47,6 @@ public class CommandLineParser(string[]? args)
         Console.WriteLine("  --config <path>  Specify the path to the configuration file.");
         Console.WriteLine("  --file <name>    Specify which backup file to restore.");
         Console.WriteLine("  --compress       Compress the backup file with gzip.");
+        Console.WriteLine("  --dry-run        Validate configuration and connection without running the operation.");
     }
 }
