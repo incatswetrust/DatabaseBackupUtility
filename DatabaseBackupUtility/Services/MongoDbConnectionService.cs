@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using MongoDB.Driver;
 using DatabaseBackupUtility.Services.Interfaces;
 
@@ -49,7 +48,7 @@ public class MongoDbConnectionService : IDatabaseConnection
         // Using the `mongodump` utility
         var backupCommand =
             $"mongodump --uri=\"{_connectionString}\" --db=\"{_database.DatabaseNamespace.DatabaseName}\" --out=\"{backupFilePath}\"";
-        await ExecuteCommand(backupCommand, cancellationToken);
+        await ProcessRunner.RunAsync("mongodump", backupCommand, cancellationToken);
         Console.WriteLine($"Backup created at {backupFilePath}");
     }
 
@@ -58,25 +57,7 @@ public class MongoDbConnectionService : IDatabaseConnection
         // Using the `mongorestore` utility
         var restoreCommand =
             $"mongorestore --uri=\"{_connectionString}\" --db=\"{_database.DatabaseNamespace.DatabaseName}\" \"{backupFilePath}\"";
-        await ExecuteCommand(restoreCommand, cancellationToken);
+        await ProcessRunner.RunAsync("mongorestore", restoreCommand, cancellationToken);
         Console.WriteLine($"Database restored from {backupFilePath}");
-    }
-
-    private static async Task ExecuteCommand(string command, CancellationToken cancellationToken)
-    {
-        var processInfo = new ProcessStartInfo("bash", $"-c \"{command}\"")
-        {
-            RedirectStandardError = true,
-            UseShellExecute = false
-        };
-
-        using var process = Process.Start(processInfo)!;
-        await process.WaitForExitAsync(cancellationToken);
-
-        if (process.ExitCode != 0)
-        {
-            var error = await process.StandardError.ReadToEndAsync(cancellationToken);
-            throw new InvalidOperationException($"Command failed (exit {process.ExitCode}): {error}");
-        }
     }
 }

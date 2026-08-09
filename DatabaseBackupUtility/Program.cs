@@ -105,6 +105,9 @@ using Polly;
     var storageService = serviceProvider.GetService<IStorageService>();
     var dbConnection = serviceProvider.GetService<IDatabaseConnection>();
 
+    var version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "unknown";
+    logger?.LogInfo($"DatabaseBackupUtility v{version} starting. Args: {string.Join(' ', args)}");
+
     if (parser.HasFlag("--dry-run"))
     {
         Console.WriteLine("Dry run: configuration is valid.");
@@ -136,9 +139,9 @@ using Polly;
             {
                 var compress = parser.HasFlag("--compress");
                 var workingBackupPath = Path.Combine(Path.GetTempPath(), $"backup_{Guid.NewGuid()}.sql");
-                var timestamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
-                var backupFilePath = Path.Combine(storageConfig.LocalPath,
-                    $"backup_{dbConfig.DatabaseName}_{timestamp}.sql{(compress ? ".gz" : string.Empty)}");
+                var outputOption = parser.GetOption("--output");
+                var backupFilePath = outputOption ?? Path.Combine(storageConfig.LocalPath,
+                    $"backup_{dbConfig.DatabaseName}_{DateTime.UtcNow:yyyyMMdd_HHmmss}.sql{(compress ? ".gz" : string.Empty)}");
                 await retryPolicy.ExecuteAsync(() => ProcessWithLoggingAsync(
                         async () =>
                         {
@@ -207,6 +210,34 @@ using Polly;
                 Console.WriteLine(canConnect
                     ? "Connection to the database succeeded."
                     : "Connection to the database failed.");
+                break;
+            }
+            case "list":
+            {
+                if (storageConfig.Type != "Local")
+                {
+                    Console.WriteLine($"Listing backups is only supported for Local storage (current type: {storageConfig.Type}).");
+                    break;
+                }
+
+                var backups = Directory.Exists(storageConfig.LocalPath)
+                    ? Directory.GetFiles(storageConfig.LocalPath, $"backup_{dbConfig.DatabaseName}_*.sql*")
+                        .OrderByDescending(File.GetLastWriteTimeUtc)
+                        .ToList()
+                    : [];
+
+                if (backups.Count == 0)
+                {
+                    Console.WriteLine($"No backups found for database '{dbConfig.DatabaseName}' in {storageConfig.LocalPath}.");
+                    break;
+                }
+
+                Console.WriteLine($"Backups for database '{dbConfig.DatabaseName}' in {storageConfig.LocalPath}:");
+                foreach (var backup in backups)
+                {
+                    var info = new FileInfo(backup);
+                    Console.WriteLine($"  {Path.GetFileName(backup)}  ({info.Length} bytes, {info.LastWriteTimeUtc:u})");
+                }
                 break;
             }
         }
