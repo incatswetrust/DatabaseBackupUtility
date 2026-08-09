@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using MySqlConnector;
 using DatabaseBackupUtility.Services.Interfaces;
 
@@ -61,7 +60,7 @@ public class MySqlConnectionService : IDatabaseConnection
             await File.WriteAllTextAsync(cnfPath, $"[client]\npassword={_password}\n", cancellationToken);
             var backupCommand =
                 $"mysqldump --defaults-extra-file={cnfPath} --databases {_database} --user={_username} > {backupFilePath}";
-            await ExecuteCommand(backupCommand, cancellationToken);
+            await ProcessRunner.RunAsync("mysqldump", backupCommand, cancellationToken);
             Console.WriteLine($"Backup created at {backupFilePath}");
         }
         finally
@@ -78,39 +77,12 @@ public class MySqlConnectionService : IDatabaseConnection
             await File.WriteAllTextAsync(cnfPath, $"[client]\npassword={_password}\n", cancellationToken);
             var restoreCommand =
                 $"mysql --defaults-extra-file={cnfPath} --database={_database} --user={_username} < {backupFilePath}";
-            await ExecuteCommand(restoreCommand, cancellationToken);
+            await ProcessRunner.RunAsync("mysql", restoreCommand, cancellationToken);
             Console.WriteLine($"Database restored from {backupFilePath}");
         }
         finally
         {
             File.Delete(cnfPath);
-        }
-    }
-
-    private static async Task ExecuteCommand(string command, CancellationToken cancellationToken)
-    {
-        var processInfo = new ProcessStartInfo("bash", $"-c \"{command}\"")
-        {
-            RedirectStandardError = true,
-            RedirectStandardOutput = true,
-            UseShellExecute = false,
-            CreateNoWindow = true
-        };
-
-        using var process = Process.Start(processInfo)!;
-        await process.WaitForExitAsync(cancellationToken);
-
-        var output = await process.StandardOutput.ReadToEndAsync(cancellationToken);
-        var error = await process.StandardError.ReadToEndAsync(cancellationToken);
-
-        if (!string.IsNullOrEmpty(output))
-        {
-            Console.WriteLine(output);
-        }
-
-        if (process.ExitCode != 0)
-        {
-            throw new InvalidOperationException($"Command failed (exit {process.ExitCode}): {error}");
         }
     }
 }

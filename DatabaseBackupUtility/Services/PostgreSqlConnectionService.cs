@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using Npgsql;
 using DatabaseBackupUtility.Services.Interfaces;
 
@@ -56,7 +55,7 @@ public class PostgreSqlConnectionService : IDatabaseConnection
     {
         var dbConnectionString = $"Host={_host};Database={_database};Username={_username}";
         var backupCommand = $"pg_dump --file \"{backupFilePath}\" --dbname \"{dbConnectionString}\"";
-        await ExecuteCommand(backupCommand, cancellationToken);
+        await ProcessRunner.RunAsync("pg_dump", backupCommand, cancellationToken, PgPasswordEnvironment());
         Console.WriteLine($"Backup created at {backupFilePath}");
     }
 
@@ -64,26 +63,9 @@ public class PostgreSqlConnectionService : IDatabaseConnection
     {
         var dbConnectionString = $"Host={_host};Database={_database};Username={_username}";
         var restoreCommand = $"psql --file \"{backupFilePath}\" --dbname \"{dbConnectionString}\"";
-        await ExecuteCommand(restoreCommand, cancellationToken);
+        await ProcessRunner.RunAsync("psql", restoreCommand, cancellationToken, PgPasswordEnvironment());
         Console.WriteLine($"Database restored from {backupFilePath}");
     }
 
-    private async Task ExecuteCommand(string command, CancellationToken cancellationToken)
-    {
-        var processInfo = new ProcessStartInfo("bash", $"-c \"{command}\"")
-        {
-            RedirectStandardError = true,
-            UseShellExecute = false
-        };
-        processInfo.Environment["PGPASSWORD"] = _password;
-
-        using var process = Process.Start(processInfo)!;
-        await process.WaitForExitAsync(cancellationToken);
-
-        if (process.ExitCode != 0)
-        {
-            var error = await process.StandardError.ReadToEndAsync(cancellationToken);
-            throw new InvalidOperationException($"Command failed (exit {process.ExitCode}): {error}");
-        }
-    }
+    private Dictionary<string, string> PgPasswordEnvironment() => new() { ["PGPASSWORD"] = _password };
 }
