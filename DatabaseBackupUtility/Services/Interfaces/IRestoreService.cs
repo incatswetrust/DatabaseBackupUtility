@@ -1,6 +1,6 @@
-namespace DatabaseBackupUtility.Configs;
+namespace DatabaseBackupUtility.Services.Interfaces;
 
 public interface IRestoreService
 {
-    Task RestoreDatabase(string backupFilePath);
+    Task RestoreDatabase(string backupFilePath, CancellationToken cancellationToken = default);
 }

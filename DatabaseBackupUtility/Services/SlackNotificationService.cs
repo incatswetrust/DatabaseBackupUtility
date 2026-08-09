@@ -1,6 +1,7 @@
 using System.Text;
+using DatabaseBackupUtility.Services.Interfaces;
 
-namespace DatabaseBackupUtility.Configs;
+namespace DatabaseBackupUtility.Services;
 
 public class SlackNotificationService(string webhookUrl) : INotificationService
 {

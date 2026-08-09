@@ -1,13 +1,13 @@
-using System.Globalization;
+using DatabaseBackupUtility.Services.Interfaces;
 
-namespace DatabaseBackupUtility.Configs;
+namespace DatabaseBackupUtility.Services;
 
 public class MongoDbBackupService(IDatabaseConnection dbConnection) : IBackupService
 {
-    public async Task CreateBackup(string backupFilePath)
+    public async Task CreateBackup(string backupFilePath, CancellationToken cancellationToken = default)
     {
         await dbConnection.Connect();
-        await dbConnection.Backup(backupFilePath);
+        await dbConnection.Backup(backupFilePath, cancellationToken);
         await dbConnection.Disconnect();
 
     }

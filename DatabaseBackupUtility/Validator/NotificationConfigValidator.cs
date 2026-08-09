@@ -1,12 +1,12 @@
 using DatabaseBackupUtility.Models;
 using FluentValidation;
 
-namespace DatabaseBackupUtility.Configs;
+namespace DatabaseBackupUtility.Validators;
 
-public class NotificationConfigValidator:AbstractValidator<Notifications>
+public class NotificationConfigValidator : AbstractValidator<Notifications>
 {
     public NotificationConfigValidator()
     {
-        RuleFor(c=> c.SlackWebhookUrl).NotEmpty().WithMessage("Slack webhook url is required.");
+        RuleFor(c => c.SlackWebhookUrl).NotEmpty().WithMessage("Slack webhook url is required.");
     }
 }

@@ -1,13 +1,15 @@
-namespace DatabaseBackupUtility.Configs;
+using DatabaseBackupUtility.Services.Interfaces;
+
+namespace DatabaseBackupUtility.Services;
 
 public class MySqlRestoreService(IDatabaseConnection dbConnection) : IRestoreService
 {
-    public async Task RestoreDatabase(string backupFilePath)
+    public async Task RestoreDatabase(string backupFilePath, CancellationToken cancellationToken = default)
     {
-        dbConnection.Connect();
+        await dbConnection.Connect();
         try
         {
-            dbConnection.Restore(backupFilePath);
+            await dbConnection.Restore(backupFilePath, cancellationToken);
             Console.WriteLine($"Database restored successfully from {backupFilePath}");
         }
         catch (Exception ex)
@@ -17,7 +19,7 @@ public class MySqlRestoreService(IDatabaseConnection dbConnection) : IRestoreSer
         }
         finally
         {
-            dbConnection.Disconnect();
+            await dbConnection.Disconnect();
         }
     }
 }

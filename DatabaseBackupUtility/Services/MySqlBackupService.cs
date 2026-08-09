@@ -1,11 +1,13 @@
-namespace DatabaseBackupUtility.Configs;
+using DatabaseBackupUtility.Services.Interfaces;
+
+namespace DatabaseBackupUtility.Services;
 
 public class MySqlBackupService(IDatabaseConnection dbConnection) : IBackupService
 {
-    public async Task CreateBackup(string backupFilePath)
+    public async Task CreateBackup(string backupFilePath, CancellationToken cancellationToken = default)
     {
-        dbConnection.Connect();
-        dbConnection.Backup(backupFilePath);
-        dbConnection.Disconnect();
+        await dbConnection.Connect();
+        await dbConnection.Backup(backupFilePath, cancellationToken);
+        await dbConnection.Disconnect();
     }
 }

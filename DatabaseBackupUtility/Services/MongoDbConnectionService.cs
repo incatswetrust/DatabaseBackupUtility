@@ -1,18 +1,22 @@
 using MongoDB.Driver;
-namespace DatabaseBackupUtility.Configs;
+using DatabaseBackupUtility.Services.Interfaces;
+
+namespace DatabaseBackupUtility.Services;
 
 public class MongoDbConnectionService : IDatabaseConnection
 {
+    private readonly string _connectionString;
     private readonly MongoClient _client;
     private readonly IMongoDatabase _database;
 
     public MongoDbConnectionService(string connectionString, string databaseName)
     {
+        _connectionString = connectionString;
         _client = new MongoClient(connectionString);
         _database = _client.GetDatabase(databaseName);
     }
 
-    public async Task <bool> TestConnection()
+    public async Task<bool> TestConnection()
     {
         try
         {
@@ -25,41 +29,35 @@ public class MongoDbConnectionService : IDatabaseConnection
         }
     }
 
-    public async Task Connect()
+    public Task Connect()
     {
         // MongoDB automatically manages the connection
-        await Task.Delay(1);
         Console.WriteLine("Connected to MongoDB database.");
+        return Task.CompletedTask;
     }
 
-    public async Task Disconnect()
+    public Task Disconnect()
     {
         // MongoDB driver does not require explicit connection closing
-        await Task.Delay(1);
         Console.WriteLine("Disconnected from MongoDB database.");
+        return Task.CompletedTask;
     }
 
-    public async Task Backup(string backupFilePath)
+    public async Task Backup(string backupFilePath, CancellationToken cancellationToken = default)
     {
         // Using the `mongodump` utility
-        await Task.Run(() =>
-        {
-            var backupCommand =
-                $"mongodump --uri=\"{_client.Settings.Server}\" --db=\"{_database.DatabaseNamespace.DatabaseName}\" --out=\"{backupFilePath}\"";
-            System.Diagnostics.Process.Start("bash", $"-c \"{backupCommand}\"");
-            Console.WriteLine($"Backup created at {backupFilePath}");
-        });
+        var backupCommand =
+            $"mongodump --uri=\"{_connectionString}\" --db=\"{_database.DatabaseNamespace.DatabaseName}\" --out=\"{backupFilePath}\"";
+        await ProcessRunner.RunAsync("mongodump", backupCommand, cancellationToken);
+        Console.WriteLine($"Backup created at {backupFilePath}");
     }
 
-    public async Task Restore(string backupFilePath)
+    public async Task Restore(string backupFilePath, CancellationToken cancellationToken = default)
     {
         // Using the `mongorestore` utility
-        await Task.Run(() =>
-        {
-            var restoreCommand =
-                $"mongorestore --uri=\"{_client.Settings.Server}\" --db=\"{_database.DatabaseNamespace.DatabaseName}\" \"{backupFilePath}\"";
-            System.Diagnostics.Process.Start("bash", $"-c \"{restoreCommand}\"");
-            Console.WriteLine($"Database restored from {backupFilePath}");
-        });
+        var restoreCommand =
+            $"mongorestore --uri=\"{_connectionString}\" --db=\"{_database.DatabaseNamespace.DatabaseName}\" \"{backupFilePath}\"";
+        await ProcessRunner.RunAsync("mongorestore", restoreCommand, cancellationToken);
+        Console.WriteLine($"Database restored from {backupFilePath}");
     }
 }

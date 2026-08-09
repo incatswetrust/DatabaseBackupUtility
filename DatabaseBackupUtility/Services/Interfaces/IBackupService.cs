@@ -1,6 +1,6 @@
-namespace DatabaseBackupUtility.Configs;
+namespace DatabaseBackupUtility.Services.Interfaces;
 
 public interface IBackupService
 {
-    Task CreateBackup(string backupFilePath);
+    Task CreateBackup(string backupFilePath, CancellationToken cancellationToken = default);
 }

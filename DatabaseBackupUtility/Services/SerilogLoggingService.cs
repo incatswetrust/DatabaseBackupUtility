@@ -1,13 +1,20 @@
 using DatabaseBackupUtility.Models;
 using Microsoft.Extensions.Configuration;
 using Serilog;
+using DatabaseBackupUtility.Services.Interfaces;
 
-namespace DatabaseBackupUtility.Configs;
+namespace DatabaseBackupUtility.Services;
 
 public class SerilogLoggingService : ILoggingService
 {
     public SerilogLoggingService(LoggingSettings settings)
     {
+        var logDirectory = Path.GetDirectoryName(settings.Path);
+        if (!string.IsNullOrEmpty(logDirectory) && !Directory.Exists(logDirectory))
+        {
+            Directory.CreateDirectory(logDirectory);
+        }
+
         Log.Logger = new LoggerConfiguration()
             .MinimumLevel.Information()
             .WriteTo.Console(restrictedToMinimumLevel: settings.ConsoleEnabled ? Serilog.Events.LogEventLevel.Information : Serilog.Events.LogEventLevel.Fatal)

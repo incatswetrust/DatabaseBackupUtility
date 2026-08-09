@@ -3,8 +3,9 @@ using Amazon.S3.Transfer;
 using System;
 using System.IO;
 using System.Threading.Tasks;
+using DatabaseBackupUtility.Services.Interfaces;
 
-namespace DatabaseBackupUtility.Configs;
+namespace DatabaseBackupUtility.Services;
 
 
 public class AwsS3StorageService(IAmazonS3 s3Client, string bucketName) : IStorageService

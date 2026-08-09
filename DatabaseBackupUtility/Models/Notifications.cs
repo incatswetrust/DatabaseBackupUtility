@@ -2,5 +2,5 @@ namespace DatabaseBackupUtility.Models;
 
 public class Notifications
 {
-    public string SlackWebhookUrl { get;} = string.Empty;
+    public string SlackWebhookUrl { get; set; } = string.Empty;
 }
