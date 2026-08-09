@@ -136,15 +136,25 @@ using Polly;
         {
             case "backup":
             {
+                var compress = parser.HasFlag("--compress");
                 var workingBackupPath = Path.Combine(Path.GetTempPath(), $"backup_{Guid.NewGuid()}.sql");
                 var timestamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
                 var backupFilePath = Path.Combine(storageConfig.LocalPath,
-                    $"backup_{dbConfig.DatabaseName}_{timestamp}.sql");
+                    $"backup_{dbConfig.DatabaseName}_{timestamp}.sql{(compress ? ".gz" : string.Empty)}");
                 await retryPolicy.ExecuteAsync(() => ProcessWithLoggingAsync(
                         async () =>
                         {
                             await backupService?.CreateBackup(workingBackupPath)!;
-                            await storageService?.SaveBackup(workingBackupPath, backupFilePath)!;
+                            var uploadPath = workingBackupPath;
+                            if (compress)
+                            {
+                                uploadPath = workingBackupPath + ".gz";
+                                await CompressionService.CompressFileAsync(workingBackupPath, uploadPath);
+                                File.Delete(workingBackupPath);
+                            }
+                            await storageService?.SaveBackup(uploadPath, backupFilePath)!;
+                            if (compress)
+                                File.Delete(uploadPath);
                         },
                         logger!,
                         notificationService!,
@@ -166,11 +176,20 @@ using Polly;
                     Console.WriteLine($"No backup file found for database '{dbConfig.DatabaseName}' in {storageConfig.LocalPath}. Use --file to specify one.");
                     return;
                 }
-                var workingBackupPath = Path.Combine(Path.GetTempPath(), $"backup_{Guid.NewGuid()}.sql");
+                var isCompressed = backupFilePath.EndsWith(".gz", StringComparison.OrdinalIgnoreCase);
+                var downloadPath = Path.Combine(Path.GetTempPath(), $"backup_{Guid.NewGuid()}.sql{(isCompressed ? ".gz" : string.Empty)}");
+                var workingBackupPath = isCompressed
+                    ? Path.Combine(Path.GetTempPath(), $"backup_{Guid.NewGuid()}.sql")
+                    : downloadPath;
                 await retryPolicy.ExecuteAsync(() => ProcessWithLoggingAsync(
                         async () =>
                         {
-                            await storageService?.LoadBackup(backupFilePath, workingBackupPath)!;
+                            await storageService?.LoadBackup(backupFilePath, downloadPath)!;
+                            if (isCompressed)
+                            {
+                                await CompressionService.DecompressFileAsync(downloadPath, workingBackupPath);
+                                File.Delete(downloadPath);
+                            }
                             await restoreService?.RestoreDatabase(workingBackupPath)!;
                         },
                         logger!,

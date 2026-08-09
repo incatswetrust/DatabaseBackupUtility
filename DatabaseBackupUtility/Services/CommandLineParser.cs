@@ -33,6 +33,11 @@ public class CommandLineParser(string[]? args)
         return null;
     }
 
+    public bool HasFlag(string flagName)
+    {
+        return args != null && Array.IndexOf(args, flagName) >= 0;
+    }
+
     public static void ShowUsage()
     {
         Console.WriteLine("Usage:");
@@ -40,5 +45,7 @@ public class CommandLineParser(string[]? args)
         Console.WriteLine("  DatabaseBackupUtility restore --config <path_to_config>");
         Console.WriteLine("Options:");
         Console.WriteLine("  --config <path>  Specify the path to the configuration file.");
+        Console.WriteLine("  --file <name>    Specify which backup file to restore.");
+        Console.WriteLine("  --compress       Compress the backup file with gzip.");
     }
 }
