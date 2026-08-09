@@ -1,5 +1,3 @@
-using System.Globalization;
-
 namespace DatabaseBackupUtility.Configs;
 
 public class MongoDbBackupService(IDatabaseConnection dbConnection) : IBackupService
