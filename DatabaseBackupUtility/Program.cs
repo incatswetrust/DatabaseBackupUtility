@@ -105,6 +105,9 @@ using Polly;
     var storageService = serviceProvider.GetService<IStorageService>();
     var dbConnection = serviceProvider.GetService<IDatabaseConnection>();
 
+    var version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "unknown";
+    logger?.LogInfo($"DatabaseBackupUtility v{version} starting. Args: {string.Join(' ', args)}");
+
     if (parser.HasFlag("--dry-run"))
     {
         Console.WriteLine("Dry run: configuration is valid.");
