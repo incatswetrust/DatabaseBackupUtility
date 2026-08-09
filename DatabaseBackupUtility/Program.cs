@@ -243,8 +243,7 @@ using Polly;
     catch (Exception ex)
     {
         Console.WriteLine($"Error during backup process: {ex.Message}");
-        if(isNotify)
-            await notificationService?.SendNotification($"Error during backup process: {ex.Message}")!;
+        await notificationService?.SendNotification($"Error during backup process: {ex.Message}")!;
     }
 
     return;
@@ -263,14 +262,12 @@ using Polly;
             log.LogInfo(startMessage);
             await action();
             log.LogInfo(successMessage);
-            if(isNotify)
-                await notification.SendNotification(successMessage);
+            await notification.SendNotification(successMessage);
         }
         catch (Exception ex)
         {
             log.LogError($"{errorMessage}: {ex.Message}");
-            if(isNotify)
-                await notification.SendNotification($"{errorMessage}: {ex.Message}");
+            await notification.SendNotification($"{errorMessage}: {ex.Message}");
             throw;
         }
     }
