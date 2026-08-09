@@ -21,3 +21,8 @@ packages/
 
 ## Logs
 *.log
+
+## Local configuration with real credentials
+appsettings.json
+appsettings.*.json
+!appsettings.example.json

@@ -11,7 +11,7 @@ public class PostgreSqlConnectionService : IDatabaseConnection
     private readonly string _database;
     private readonly string _username;
     private readonly string _password;
-    private NpgsqlConnection _connection;
+    private NpgsqlConnection? _connection;
 
     public PostgreSqlConnectionService(string host, int? port, string database, string username, string password)
     {
@@ -54,7 +54,7 @@ public class PostgreSqlConnectionService : IDatabaseConnection
 
     public async Task Disconnect()
     {
-        if (_connection.State == System.Data.ConnectionState.Open)
+        if (_connection?.State == System.Data.ConnectionState.Open)
         {
             await _connection.CloseAsync();
             Console.WriteLine("Disconnected from PostgreSQL database.");

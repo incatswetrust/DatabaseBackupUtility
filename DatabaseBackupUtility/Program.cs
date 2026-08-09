@@ -52,7 +52,7 @@ using Polly;
     if (notificationConfig is null)
         isNotify = false;
 
-    if (isNotify)
+    if (isNotify && notificationConfig is not null)
     {
         var notificationValidator = new NotificationConfigValidator();
         validationResult = notificationValidator.Validate(notificationConfig);
