@@ -137,7 +137,9 @@ using Polly;
             case "backup":
             {
                 var workingBackupPath = Path.Combine(Path.GetTempPath(), $"backup_{Guid.NewGuid()}.sql");
-                var backupFilePath = Path.Combine(storageConfig.LocalPath, "backup.sql");
+                var timestamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
+                var backupFilePath = Path.Combine(storageConfig.LocalPath,
+                    $"backup_{dbConfig.DatabaseName}_{timestamp}.sql");
                 await retryPolicy.ExecuteAsync(() => ProcessWithLoggingAsync(
                         async () =>
                         {
@@ -157,7 +159,13 @@ using Polly;
             }
             case "restore":
             {
-                var backupFilePath = Path.Combine(storageConfig.LocalPath, "backup.sql");
+                var backupFilePath = ResolveBackupFilePath(storageConfig.LocalPath, dbConfig.DatabaseName,
+                    parser.GetOption("--file"));
+                if (backupFilePath is null)
+                {
+                    Console.WriteLine($"No backup file found for database '{dbConfig.DatabaseName}' in {storageConfig.LocalPath}. Use --file to specify one.");
+                    return;
+                }
                 var workingBackupPath = Path.Combine(Path.GetTempPath(), $"backup_{Guid.NewGuid()}.sql");
                 await retryPolicy.ExecuteAsync(() => ProcessWithLoggingAsync(
                         async () =>
@@ -211,6 +219,19 @@ using Polly;
                 await notification.SendNotification($"{errorMessage}: {ex.Message}");
             throw;
         }
+    }
+
+    string? ResolveBackupFilePath(string localPath, string databaseName, string? explicitFile)
+    {
+        if (!string.IsNullOrEmpty(explicitFile))
+            return Path.Combine(localPath, explicitFile);
+
+        if (!Directory.Exists(localPath))
+            return null;
+
+        return Directory.GetFiles(localPath, $"backup_{databaseName}_*.sql*")
+            .OrderByDescending(File.GetLastWriteTimeUtc)
+            .FirstOrDefault();
     }
 
     void ShowErrors(List<ValidationFailure> errors)
