@@ -1,4 +1,5 @@
-﻿using DatabaseBackupUtility.Factories;
+﻿using Cronos;
+using DatabaseBackupUtility.Factories;
 using DatabaseBackupUtility.Models;
 using DatabaseBackupUtility.Services;
 using DatabaseBackupUtility.Services.Interfaces;
@@ -126,72 +127,127 @@ using Polly;
         cancellationTokenSource.Cancel();
     };
     var cancellationToken = cancellationTokenSource.Token;
+    var retryPolicy = Policy
+        .Handle<Exception>(ex => ex is not OperationCanceledException)
+        .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)));
 
     try
     {
-        var retryPolicy = Policy
-            .Handle<Exception>(ex => ex is not OperationCanceledException)
-            .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)));
-
         switch (command)
         {
             case "backup":
             {
+                var typeOption = parser.GetOption("--type") ?? "full";
+                if (!Enum.TryParse<BackupType>(typeOption, ignoreCase: true, out var backupType))
+                {
+                    Console.WriteLine($"Unknown backup type '{typeOption}'. Use full, incremental, or differential.");
+                    return;
+                }
+
+                await RunBackupOnceAsync(backupType, parser.HasFlag("--compress"), parser.GetOption("--output"), TriggerLogFormatter.Manual);
+                break;
+            }
+            case "schedule":
+            {
+                var typeOption = parser.GetOption("--type") ?? "full";
+                if (!Enum.TryParse<BackupType>(typeOption, ignoreCase: true, out var backupType))
+                {
+                    Console.WriteLine($"Unknown backup type '{typeOption}'. Use full, incremental, or differential.");
+                    return;
+                }
+
+                if (!parser.TryGetScheduleInterval(out var cronExpression, out var intervalError))
+                {
+                    Console.WriteLine(intervalError);
+                    return;
+                }
+
+                var intervalOption = parser.GetOption("--interval");
                 var compress = parser.HasFlag("--compress");
-                var workingBackupPath = Path.Combine(Path.GetTempPath(), $"backup_{Guid.NewGuid()}.sql");
                 var outputOption = parser.GetOption("--output");
-                var backupFilePath = outputOption ?? Path.Combine(storageConfig.LocalPath,
-                    $"backup_{dbConfig.DatabaseName}_{DateTime.UtcNow:yyyyMMdd_HHmmss}.sql{(compress ? ".gz" : string.Empty)}");
-                await retryPolicy.ExecuteAsync(() => ProcessWithLoggingAsync(
-                        async () =>
+
+                Console.WriteLine($"Scheduler started with interval '{intervalOption}'. Press Ctrl+C to stop.");
+                logger?.LogInfo($"Scheduler started with interval '{intervalOption}'.");
+
+                while (!cancellationToken.IsCancellationRequested)
+                {
+                    var next = cronExpression!.GetNextOccurrence(DateTimeOffset.UtcNow, TimeZoneInfo.Utc);
+                    if (next is null)
+                    {
+                        Console.WriteLine($"Cron expression '{intervalOption}' has no future occurrences.");
+                        break;
+                    }
+
+                    var delay = next.Value - DateTimeOffset.UtcNow;
+                    if (delay > TimeSpan.Zero)
+                    {
+                        try
                         {
-                            await backupService?.CreateBackup(workingBackupPath, cancellationToken)!;
-                            var uploadPath = workingBackupPath;
-                            if (compress)
-                            {
-                                uploadPath = workingBackupPath + ".gz";
-                                await CompressionService.CompressFileAsync(workingBackupPath, uploadPath);
-                                File.Delete(workingBackupPath);
-                            }
-                            await storageService?.SaveBackup(uploadPath, backupFilePath)!;
-                            if (compress)
-                                File.Delete(uploadPath);
-                        },
-                        logger!,
-                        notificationService!,
-                        "Starting backup process...",
-                        "Backup process completed successfully.",
-                        "Backup process failed"
-                    )
-                );
+                            await Task.Delay(delay, cancellationToken);
+                        }
+                        catch (OperationCanceledException)
+                        {
+                            break;
+                        }
+                    }
 
+                    if (cancellationToken.IsCancellationRequested) break;
 
+                    await RunBackupOnceAsync(backupType, compress, outputOption, TriggerLogFormatter.Scheduled);
+                }
+
+                Console.WriteLine("Scheduler stopped.");
                 break;
             }
             case "restore":
             {
-                var backupFilePath = ResolveBackupFilePath(storageConfig.LocalPath, dbConfig.DatabaseName,
-                    parser.GetOption("--file"));
+                var chainService = new BackupChainService(storageConfig.LocalPath);
+                var manifests = await chainService.LoadManifestsAsync(dbConfig.DatabaseName, cancellationToken);
+                var explicitFile = parser.GetOption("--file");
+                var selectiveTarget = parser.GetOption("--table") ?? parser.GetOption("--collection");
+                var targets = selectiveTarget is null ? null : new List<string> { selectiveTarget };
+
+                var targetManifest = manifests.Count == 0
+                    ? null
+                    : string.IsNullOrEmpty(explicitFile)
+                        ? BackupChainService.FindLatest(manifests)
+                        : manifests.FirstOrDefault(m => m.FileName == explicitFile || Path.GetFileName(m.FileName) == explicitFile);
+
+                if (targetManifest is not null)
+                {
+                    var chain = BackupChainService.ResolveChain(manifests, targetManifest.Id);
+                    await retryPolicy.ExecuteAsync(() => ProcessWithLoggingAsync(
+                            async () =>
+                            {
+                                var steps = new List<(string FilePath, BackupType Type)>();
+                                foreach (var step in chain)
+                                    steps.Add((await DownloadAndDecompressAsync(step.FileName), step.Type));
+
+                                await restoreService?.RestoreChain(steps, targets, cancellationToken)!;
+                            },
+                            logger!,
+                            notificationService!,
+                            "Starting restore process...",
+                            "Restore process completed successfully.",
+                            "Restore process failed"
+                        )
+                    );
+                    break;
+                }
+
+                // No chain metadata found (e.g. a backup taken before this version, or --file
+                // naming a plain file): fall back to a single-file full restore.
+                var backupFilePath = ResolveBackupFilePath(storageConfig.LocalPath, dbConfig.DatabaseName, explicitFile);
                 if (backupFilePath is null)
                 {
                     Console.WriteLine($"No backup file found for database '{dbConfig.DatabaseName}' in {storageConfig.LocalPath}. Use --file to specify one.");
                     return;
                 }
-                var isCompressed = backupFilePath.EndsWith(".gz", StringComparison.OrdinalIgnoreCase);
-                var downloadPath = Path.Combine(Path.GetTempPath(), $"backup_{Guid.NewGuid()}.sql{(isCompressed ? ".gz" : string.Empty)}");
-                var workingBackupPath = isCompressed
-                    ? Path.Combine(Path.GetTempPath(), $"backup_{Guid.NewGuid()}.sql")
-                    : downloadPath;
                 await retryPolicy.ExecuteAsync(() => ProcessWithLoggingAsync(
                         async () =>
                         {
-                            await storageService?.LoadBackup(backupFilePath, downloadPath)!;
-                            if (isCompressed)
-                            {
-                                await CompressionService.DecompressFileAsync(downloadPath, workingBackupPath);
-                                File.Delete(downloadPath);
-                            }
-                            await restoreService?.RestoreDatabase(workingBackupPath, cancellationToken)!;
+                            var workingBackupPath = await DownloadAndDecompressAsync(backupFilePath);
+                            await restoreService?.RestoreDatabase(workingBackupPath, BackupType.Full, targets, cancellationToken)!;
                         },
                         logger!,
                         notificationService!,
@@ -255,6 +311,55 @@ using Polly;
     return;
 
 
+    async Task RunBackupOnceAsync(BackupType backupType, bool compress, string? outputOption, string trigger)
+    {
+        var backupId = Guid.NewGuid().ToString("N");
+        var workingBackupPath = Path.Combine(Path.GetTempPath(), $"backup_{backupId}.sql");
+        var backupFilePath = outputOption ?? Path.Combine(storageConfig.LocalPath,
+            $"backup_{dbConfig.DatabaseName}_{DateTime.UtcNow:yyyyMMdd_HHmmss}.sql{(compress ? ".gz" : string.Empty)}");
+
+        var chainService = new BackupChainService(storageConfig.LocalPath);
+        var existingManifests = await chainService.LoadManifestsAsync(dbConfig.DatabaseName, cancellationToken);
+        var parent = BackupChainService.ResolveParent(existingManifests, backupType);
+        var parentId = BackupChainService.ResolveImmediateParentId(existingManifests, backupType);
+        var typeLabel = backupType.ToString().ToLowerInvariant();
+
+        await retryPolicy.ExecuteAsync(() => ProcessWithLoggingAsync(
+                async () =>
+                {
+                    var position = await backupService?.CreateBackup(backupId, workingBackupPath, backupType, parent, cancellationToken)!;
+                    var uploadPath = workingBackupPath;
+                    if (compress)
+                    {
+                        uploadPath = workingBackupPath + ".gz";
+                        await CompressionService.CompressFileAsync(workingBackupPath, uploadPath);
+                        File.Delete(workingBackupPath);
+                    }
+                    await storageService?.SaveBackup(uploadPath, backupFilePath)!;
+                    if (compress)
+                        File.Delete(uploadPath);
+
+                    await chainService.SaveManifestAsync(new BackupManifest
+                    {
+                        Id = backupId,
+                        DatabaseName = dbConfig.DatabaseName,
+                        Type = backupType,
+                        ParentId = parentId,
+                        FullBackupId = backupType == BackupType.Full ? backupId : parent!.FullBackupId,
+                        Position = position,
+                        FileName = backupFilePath,
+                        CreatedAtUtc = DateTime.UtcNow
+                    }, cancellationToken);
+                },
+                logger!,
+                notificationService!,
+                TriggerLogFormatter.Format(trigger, $"Starting {typeLabel} backup process..."),
+                TriggerLogFormatter.Format(trigger, $"{typeLabel} backup process completed successfully."),
+                TriggerLogFormatter.Format(trigger, $"{typeLabel} backup process failed")
+            )
+        );
+    }
+
     async Task ProcessWithLoggingAsync(
         Func<Task> action,
         ILoggingService log,
@@ -276,6 +381,24 @@ using Polly;
             await notification.SendNotification($"{errorMessage}: {ex.Message}");
             throw;
         }
+    }
+
+    async Task<string> DownloadAndDecompressAsync(string storedFilePath)
+    {
+        var isCompressed = storedFilePath.EndsWith(".gz", StringComparison.OrdinalIgnoreCase);
+        var downloadPath = Path.Combine(Path.GetTempPath(), $"backup_{Guid.NewGuid()}.sql{(isCompressed ? ".gz" : string.Empty)}");
+        var workingBackupPath = isCompressed
+            ? Path.Combine(Path.GetTempPath(), $"backup_{Guid.NewGuid()}.sql")
+            : downloadPath;
+
+        await storageService!.LoadBackup(storedFilePath, downloadPath);
+        if (isCompressed)
+        {
+            await CompressionService.DecompressFileAsync(downloadPath, workingBackupPath);
+            File.Delete(downloadPath);
+        }
+
+        return workingBackupPath;
     }
 
     string? ResolveBackupFilePath(string localPath, string databaseName, string? explicitFile)

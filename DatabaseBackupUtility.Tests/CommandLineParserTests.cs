@@ -10,6 +10,7 @@ public class CommandLineParserTests
     [InlineData("restore")]
     [InlineData("test-connection")]
     [InlineData("list")]
+    [InlineData("schedule")]
     public void IsValid_AcceptsKnownCommands(string command)
     {
         var parser = new CommandLineParser([command, "--config", "config.json"]);
@@ -123,5 +124,44 @@ public class CommandLineParserTests
         var parser = new CommandLineParser(null);
 
         Assert.False(parser.HasFlag("--compress"));
+    }
+
+    [Fact]
+    public void TryGetScheduleInterval_ParsesAValidCronExpression()
+    {
+        var parser = new CommandLineParser(["schedule", "--config", "config.json", "--interval", "0 3 * * *"]);
+
+        var result = parser.TryGetScheduleInterval(out var cronExpression, out var error);
+
+        Assert.True(result);
+        Assert.NotNull(cronExpression);
+        Assert.Null(error);
+    }
+
+    [Fact]
+    public void TryGetScheduleInterval_FailsWhenIntervalIsMissing()
+    {
+        var parser = new CommandLineParser(["schedule", "--config", "config.json"]);
+
+        var result = parser.TryGetScheduleInterval(out var cronExpression, out var error);
+
+        Assert.False(result);
+        Assert.Null(cronExpression);
+        Assert.NotNull(error);
+    }
+
+    [Theory]
+    [InlineData("not a cron expression")]
+    [InlineData("* * * *")]
+    [InlineData("77 * * * *")]
+    public void TryGetScheduleInterval_FailsForAnInvalidCronExpression(string interval)
+    {
+        var parser = new CommandLineParser(["schedule", "--config", "config.json", "--interval", interval]);
+
+        var result = parser.TryGetScheduleInterval(out var cronExpression, out var error);
+
+        Assert.False(result);
+        Assert.Null(cronExpression);
+        Assert.NotNull(error);
     }
 }

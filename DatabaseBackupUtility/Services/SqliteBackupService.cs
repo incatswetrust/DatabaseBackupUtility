@@ -3,7 +3,7 @@ using DatabaseBackupUtility.Services.Interfaces;
 
 namespace DatabaseBackupUtility.Services;
 
-public class MongoDbBackupService(IDatabaseConnection dbConnection) : IBackupService
+public class SqliteBackupService(IDatabaseConnection dbConnection) : IBackupService
 {
     public async Task<string?> CreateBackup(string backupId, string backupFilePath, BackupType type = BackupType.Full,
         BackupParent? parent = null, CancellationToken cancellationToken = default)

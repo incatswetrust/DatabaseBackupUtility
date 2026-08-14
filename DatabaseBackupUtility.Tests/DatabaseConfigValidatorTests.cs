@@ -38,6 +38,35 @@ public class DatabaseConfigValidatorTests
         Assert.True(result.IsValid);
     }
 
+    [Fact]
+    public void Validate_AcceptsSqliteConfigWithOnlyFilePath()
+    {
+        var config = new DatabaseConfig
+        {
+            Type = "Sqlite",
+            FilePath = "/data/mydatabase.db",
+            DatabaseName = "mydatabase"
+        };
+
+        var result = _validator.Validate(config);
+
+        Assert.True(result.IsValid);
+    }
+
+    [Fact]
+    public void Validate_RejectsSqliteConfigWithoutFilePath()
+    {
+        var config = new DatabaseConfig
+        {
+            Type = "Sqlite",
+            DatabaseName = "mydatabase"
+        };
+
+        var result = _validator.Validate(config);
+
+        Assert.False(result.IsValid);
+    }
+
     [Theory]
     [InlineData("")]
     [InlineData("Oracle")]
