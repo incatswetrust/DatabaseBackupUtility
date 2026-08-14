@@ -4,7 +4,7 @@
 
 ## Overview
 
-The **Database Backup Utility v.2.0.0** is a versatile tool designed to simplify the process of creating and restoring backups for various database management systems (DBMS). This tool is especially useful for developers and administrators who need a reliable way to manage database backups via a command-line interface.
+The **Database Backup Utility v.3.0.0** is a versatile tool designed to simplify the process of creating and restoring backups for various database management systems (DBMS). This tool is especially useful for developers and administrators who need a reliable way to manage database backups via a command-line interface.
 
 ## Features
 
@@ -87,43 +87,6 @@ Options:
 
 Restore automatically resolves the full/incremental/differential chain the target backup belongs to (see [Backup types](#backup-types)) and applies every step in order. Backups taken before chain metadata existed, or files not tracked in it, fall back to a plain single-file full restore.
 
-## Selective restore
-
-By default, `restore` restores everything in the backup. To restore just one table or collection instead:
-
-```bash
-DatabaseBackupUtility restore --config config.json --table orders
-DatabaseBackupUtility restore --config config.json --collection orders
-```
-
-* **MongoDB** (`--collection`) — points `mongorestore --collection` directly at that collection's BSON file inside the dump, so only it is touched.
-* **MySQL/PostgreSQL** (`--table`) — since a full backup is one dump file covering every table, the utility filters it down to only the statements for the requested table (its `CREATE`/`DROP`, and its `INSERT`/`COPY` data) before applying it, leaving other tables untouched. This is a best-effort, line-oriented filter rather than a full SQL parser — fine for the common case of restoring one table's data, but a table name that only appears incidentally (e.g. as a foreign key reference inside another table's definition) could be pulled in too.
-
-For MySQL/PostgreSQL, `--table` is applied to every step of an incremental/differential chain restore, since each step is itself a plain-SQL file the same filter works on. For MongoDB, `--collection` only restricts the initial full restore step — an incremental/differential chain's oplog replay still applies to the whole database, since oplog entries aren't filterable by collection the same way.
-
-## Backup types
-
-Every database except SQLite (a single-file snapshot has nothing to be incremental against) supports three backup types:
-
-* **`full`** — a complete, standalone snapshot (`mysqldump`/`pg_dump`/`mongodump`), exactly as before. Every chain starts with one.
-* **`incremental`** — changes since the most recent backup of *any* type. Restoring an incremental backup applies the full backup plus every incremental step since it, in order.
-* **`differential`** — changes since the most recent *full* backup, regardless of how many differentials or incrementals came in between. Restoring a differential backup applies only the full backup plus that one differential.
-
-Each backup's place in the chain is recorded in a small JSON sidecar file kept locally under `Storage.LocalPath` (even when the backup blob itself goes to cloud storage, since remote storage backends aren't listable). `restore` reads these sidecars to work out which files to download and apply, and in what order.
-
-Per-engine mechanics:
-
-* **MySQL** — incremental/differential backups are captured with `mysqlbinlog --read-from-remote-server`, streaming binary log events since the parent's `file:position` checkpoint over the network (no filesystem access to the server needed). The output is plain SQL, applied the same way as a full dump. Requires binary logging enabled and `REPLICATION SLAVE`/`REPLICATION CLIENT` privileges for the configured user.
-* **PostgreSQL** — each full backup opens a pair of logical replication slots (`wal_level = logical` and the `wal2json` output plugin are required). Incremental backups consume one slot (so each call only sees changes since the last backup), while differential backups peek the other slot without consuming it (so every call sees everything since the full backup). The captured wal2json changes are translated into plain `INSERT`/`UPDATE`/`DELETE` statements and applied via `psql`, same as a full dump. Update/delete capture needs a primary key or `REPLICA IDENTITY FULL` on the affected tables; exotic column types (arrays, composite types, `bytea`) may need manual review.
-* **MongoDB** — requires a replica set (a standalone `mongod` has no oplog). Incremental/differential backups dump `local.oplog.rs` entries newer than the parent's timestamp and are applied with `mongorestore --oplogReplay`. A chain with several incremental/differential steps has its oplog dumps merged into one before replay, since `mongorestore` only replays a single oplog per call.
-
-```bash
-DatabaseBackupUtility backup --config config.json --type full
-DatabaseBackupUtility backup --config config.json --type incremental
-DatabaseBackupUtility backup --config config.json --type differential
-DatabaseBackupUtility restore --config config.json
-```
-
 ### Test Connection
 
 ```bash
@@ -154,6 +117,43 @@ DatabaseBackupUtility schedule --config config.json --type incremental --interva
 ```
 
 If you'd rather not keep a long-running process around, the same effect can be had by invoking `backup` from your OS's own scheduler instead — see [Alternative: OS-level scheduling](#alternative-os-level-scheduling).
+
+## Backup types
+
+Every database except SQLite (a single-file snapshot has nothing to be incremental against) supports three backup types:
+
+* **`full`** — a complete, standalone snapshot (`mysqldump`/`pg_dump`/`mongodump`), exactly as before. Every chain starts with one.
+* **`incremental`** — changes since the most recent backup of *any* type. Restoring an incremental backup applies the full backup plus every incremental step since it, in order.
+* **`differential`** — changes since the most recent *full* backup, regardless of how many differentials or incrementals came in between. Restoring a differential backup applies only the full backup plus that one differential.
+
+Each backup's place in the chain is recorded in a small JSON sidecar file kept locally under `Storage.LocalPath` (even when the backup blob itself goes to cloud storage, since remote storage backends aren't listable). `restore` reads these sidecars to work out which files to download and apply, and in what order.
+
+Per-engine mechanics:
+
+* **MySQL** — incremental/differential backups are captured with `mysqlbinlog --read-from-remote-server`, streaming binary log events since the parent's `file:position` checkpoint over the network (no filesystem access to the server needed). The output is plain SQL, applied the same way as a full dump. Requires binary logging enabled and `REPLICATION SLAVE`/`REPLICATION CLIENT` privileges for the configured user.
+* **PostgreSQL** — each full backup opens a pair of logical replication slots (`wal_level = logical` and the `wal2json` output plugin are required). Incremental backups consume one slot (so each call only sees changes since the last backup), while differential backups peek the other slot without consuming it (so every call sees everything since the full backup). The captured wal2json changes are translated into plain `INSERT`/`UPDATE`/`DELETE` statements and applied via `psql`, same as a full dump. Update/delete capture needs a primary key or `REPLICA IDENTITY FULL` on the affected tables; exotic column types (arrays, composite types, `bytea`) may need manual review.
+* **MongoDB** — requires a replica set (a standalone `mongod` has no oplog). Incremental/differential backups dump `local.oplog.rs` entries newer than the parent's timestamp and are applied with `mongorestore --oplogReplay`. A chain with several incremental/differential steps has its oplog dumps merged into one before replay, since `mongorestore` only replays a single oplog per call.
+
+```bash
+DatabaseBackupUtility backup --config config.json --type full
+DatabaseBackupUtility backup --config config.json --type incremental
+DatabaseBackupUtility backup --config config.json --type differential
+DatabaseBackupUtility restore --config config.json
+```
+
+## Selective restore
+
+By default, `restore` restores everything in the backup. To restore just one table or collection instead:
+
+```bash
+DatabaseBackupUtility restore --config config.json --table orders
+DatabaseBackupUtility restore --config config.json --collection orders
+```
+
+* **MongoDB** (`--collection`) — points `mongorestore --collection` directly at that collection's BSON file inside the dump, so only it is touched.
+* **MySQL/PostgreSQL** (`--table`) — since a full backup is one dump file covering every table, the utility filters it down to only the statements for the requested table (its `CREATE`/`DROP`, and its `INSERT`/`COPY` data) before applying it, leaving other tables untouched. This is a best-effort, line-oriented filter rather than a full SQL parser — fine for the common case of restoring one table's data, but a table name that only appears incidentally (e.g. as a foreign key reference inside another table's definition) could be pulled in too.
+
+For MySQL/PostgreSQL, `--table` is applied to every step of an incremental/differential chain restore, since each step is itself a plain-SQL file the same filter works on. For MongoDB, `--collection` only restricts the initial full restore step — an incremental/differential chain's oplog replay still applies to the whole database, since oplog entries aren't filterable by collection the same way.
 
 ## Configuration
 
