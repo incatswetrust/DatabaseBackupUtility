@@ -34,16 +34,6 @@ The **Database Backup Utility v.3.0.0** is a versatile tool designed to simplify
 
 If a required tool isn't found on `PATH`, backup/restore commands fail with a message naming the missing tool.
 
-## Requirements
-
-* [.NET 8 runtime](https://dotnet.microsoft.com/download) to run the utility.
-* The command-line client for whichever database you back up, available on `PATH`:
-  * MySQL: `mysqldump` and `mysql`
-  * PostgreSQL: `pg_dump` and `psql`
-  * MongoDB: `mongodump` and `mongorestore`
-
-If a required tool isn't found on `PATH`, backup/restore commands fail with a message naming the missing tool.
-
 ## Installation
 
 1. Download the Executable: Download the latest release of `DatabaseBackupUtility.exe` from the Releases page.
