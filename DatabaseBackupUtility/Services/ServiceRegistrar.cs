@@ -17,6 +17,7 @@ public static class ServiceRegistrar
                 "MySql" => new MySqlBackupService(sp.GetRequiredService<IDatabaseConnection>()),
                 "PostgreSql" => new PostgreSqlBackupService(sp.GetRequiredService<IDatabaseConnection>()),
                 "MongoDb" => new MongoDbBackupService(sp.GetRequiredService<IDatabaseConnection>()),
+                "Sqlite" => new SqliteBackupService(sp.GetRequiredService<IDatabaseConnection>()),
                 _ => throw new InvalidOperationException($"Unsupported database type: {dbConfig.Type}")
             })
             .AddSingleton<IRestoreService>(sp => dbConfig.Type switch
@@ -24,6 +25,7 @@ public static class ServiceRegistrar
                 "MySql" => new MySqlRestoreService(sp.GetRequiredService<IDatabaseConnection>()),
                 "PostgreSql" => new PostgreSqlRestoreService(sp.GetRequiredService<IDatabaseConnection>()),
                 "MongoDb" => new MongoDbRestoreService(sp.GetRequiredService<IDatabaseConnection>()),
+                "Sqlite" => new SqliteRestoreService(sp.GetRequiredService<IDatabaseConnection>()),
                 _ => throw new InvalidOperationException($"Unsupported database type: {dbConfig.Type}")
             });
     }

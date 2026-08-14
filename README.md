@@ -8,7 +8,7 @@ The **Database Backup Utility v.2.0.0** is a versatile tool designed to simplify
 
 ## Features
 
-* **Multi-DBMS Support:** Supports MySQL, PostgreSQL, and MongoDB out of the box.
+* **Multi-DBMS Support:** Supports MySQL, PostgreSQL, MongoDB, and SQLite out of the box.
 * **Automated Backups:** Easily set up automated backups with configurable options.
 * **Command-Line Interface:** Manage backups and restores using simple command-line commands.
 * **Flexible Storage Options:** Store backups locally or in cloud storage solutions.
@@ -21,6 +21,7 @@ The **Database Backup Utility v.2.0.0** is a versatile tool designed to simplify
 * **MySQL:** One of the most popular relational databases, commonly used in web applications.
 * **PostgreSQL:** A robust, open-source object-relational database known for its reliability and advanced features.
 * **MongoDB:** A NoSQL database oriented towards document storage, widely used for handling large volumes of unstructured data.
+* **SQLite:** A lightweight, file-based relational database that needs no separate server process.
 
 ## Requirements
 
@@ -29,6 +30,7 @@ The **Database Backup Utility v.2.0.0** is a versatile tool designed to simplify
   * MySQL: `mysqldump` and `mysql`
   * PostgreSQL: `pg_dump` and `psql`
   * MongoDB: `mongodump` and `mongorestore`
+  * SQLite: none — backup/restore is done through the bundled `Microsoft.Data.Sqlite` library, no `sqlite3` CLI required.
 
 If a required tool isn't found on `PATH`, backup/restore commands fail with a message naming the missing tool.
 
@@ -36,7 +38,7 @@ If a required tool isn't found on `PATH`, backup/restore commands fail with a me
 
 1. Download the Executable: Download the latest release of `DatabaseBackupUtility.exe` from the Releases page.
 2. Prepare Configuration File:
-* Create a `config.json` file in the same directory as the executable (see [Configuration](#configuration) below for a full example per database type). A template with placeholder values is also checked in at `DatabaseBackupUtility/Configs/appsettings.example.json`.
+* Create a `config.json` file in the same directory as the executable (see [Configuration](#configuration) below for a full example per database type). Templates with placeholder values are also checked in at `DatabaseBackupUtility/Configs/appsettings.example.json` (MySQL) and `DatabaseBackupUtility/Configs/appsettings.sqlite.example.json` (SQLite).
 3. Run the Tool:
 * Open a command-line interface and navigate to the directory containing `DatabaseBackupUtility.exe`.
 * Execute commands to perform backups or restores.
@@ -175,6 +177,29 @@ Lists backup files for the configured database found in `Storage.LocalPath`, new
   }
 }
 ```
+
+### SQLite example
+
+SQLite has no host, port, username, or password — `Database.FilePath` points at the `.db`/`.sqlite` file instead.
+
+```json
+{
+  "Database": {
+    "Type": "Sqlite",
+    "FilePath": "C:/Data/mydatabase.db",
+    "DatabaseName": "mydatabase"
+  },
+  "Storage": {
+    "Type": "Local",
+    "LocalPath": "C:/Backups"
+  },
+  "Logging": {
+    "Path": "logs/log.txt"
+  }
+}
+```
+
+Backups are taken with `VACUUM INTO`, which produces a consistent snapshot of the database file even while other connections are active against it. Restoring copies the backup file back over `Database.FilePath`.
 
 Never commit a `config.json`/`appsettings.json` with real credentials — `.gitignore` excludes `appsettings*.json` (aside from the checked-in `appsettings.example.json` template) for this reason.
 
