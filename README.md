@@ -59,6 +59,7 @@ DatabaseBackupUtility <command> --config <path_to_config> [options]
 | `restore` | Restore the database from a backup. |
 | `test-connection` | Check connectivity to the configured database without doing anything else. |
 | `list` | List existing backups for the configured database (Local storage only). |
+| `schedule` | Run backups on a recurring schedule, staying in the foreground. |
 
 ### Backup
 
@@ -136,6 +137,23 @@ DatabaseBackupUtility list --config config.json
 ```
 
 Lists backup files for the configured database found in `Storage.LocalPath`, newest first. Only supported when `Storage.Type` is `Local`.
+
+### Schedule
+
+```bash
+DatabaseBackupUtility schedule --config config.json --interval "0 3 * * *"
+```
+
+Runs backups on a recurring schedule described by a standard 5-field cron expression (minute hour day-of-month month day-of-week, UTC), staying in the foreground until stopped with Ctrl+C. Accepts the same `--type`, `--output`, and `--compress` options as `backup`. Every run it triggers is logged and notified with a `[trigger: scheduled]` tag, so scheduled runs are distinguishable from ones started manually via `backup` (`[trigger: manual]`).
+
+```bash
+# Full backup every day at 03:00 UTC
+DatabaseBackupUtility schedule --config config.json --interval "0 3 * * *"
+# Incremental backup every hour
+DatabaseBackupUtility schedule --config config.json --type incremental --interval "0 * * * *"
+```
+
+If you'd rather not keep a long-running process around, the same effect can be had by invoking `backup` from your OS's own scheduler instead — see [Alternative: OS-level scheduling](#alternative-os-level-scheduling).
 
 ## Configuration
 
@@ -244,6 +262,22 @@ SQLite has no host, port, username, or password — `Database.FilePath` points a
 Backups are taken with `VACUUM INTO`, which produces a consistent snapshot of the database file even while other connections are active against it. Restoring copies the backup file back over `Database.FilePath`.
 
 Never commit a `config.json`/`appsettings.json` with real credentials — `.gitignore` excludes `appsettings*.json` (aside from the checked-in `appsettings.example.json` template) for this reason.
+
+## Alternative: OS-level scheduling
+
+Instead of keeping `schedule` running in the foreground, you can invoke `backup` directly from your OS's own scheduler.
+
+**Linux/macOS (cron)** — daily full backup at 03:00, edited with `crontab -e`:
+
+```cron
+0 3 * * * /path/to/DatabaseBackupUtility backup --config /path/to/config.json >> /path/to/cron.log 2>&1
+```
+
+**Windows (Task Scheduler)** — daily at 03:00, from an elevated prompt:
+
+```powershell
+schtasks /create /tn "DatabaseBackupUtility" /tr "C:\path\to\DatabaseBackupUtility.exe backup --config C:\path\to\config.json" /sc daily /st 03:00
+```
 
 ## License
 
