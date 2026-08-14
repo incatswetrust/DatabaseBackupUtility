@@ -25,4 +25,4 @@ packages/
 ## Local configuration with real credentials
 appsettings.json
 appsettings.*.json
-!appsettings.example.json
+!appsettings*.example.json

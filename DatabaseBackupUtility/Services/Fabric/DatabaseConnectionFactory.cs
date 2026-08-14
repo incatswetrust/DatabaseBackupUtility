@@ -26,6 +26,7 @@ public class DatabaseConnectionFactory : IDatabaseConnectionFactory
             "MongoDb" => new MongoDbConnectionService(
                 $"mongodb://{dbConfig.Username}:{dbConfig.Password}@{hostAndPort}",
                 dbConfig.DatabaseName),
+            "Sqlite" => new SqliteConnectionService(dbConfig.FilePath!),
             _ => throw new Exception("Unsupported database type.")
         };
     }

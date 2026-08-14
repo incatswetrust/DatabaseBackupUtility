@@ -8,6 +8,9 @@ public class DatabaseConfig
     public string DatabaseName { get; set; } = string.Empty;
     public string Username { get; set; } = string.Empty;
     public string Password { get; set; } = string.Empty;
+
+    // Used instead of Host/Port/Username/Password when Type is "Sqlite", since a SQLite database is a single file.
+    public string? FilePath { get; set; }
 }
 
 

@@ -3,7 +3,7 @@ using DatabaseBackupUtility.Services.Interfaces;
 
 namespace DatabaseBackupUtility.Services;
 
-public class MySqlRestoreService(IDatabaseConnection dbConnection) : IRestoreService
+public class SqliteRestoreService(IDatabaseConnection dbConnection) : IRestoreService
 {
     public async Task RestoreDatabase(string backupFilePath, BackupType type = BackupType.Full, IReadOnlyList<string>? targets = null,
         CancellationToken cancellationToken = default)
