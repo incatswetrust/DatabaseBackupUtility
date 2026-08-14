@@ -1,4 +1,5 @@
 using Microsoft.Data.Sqlite;
+using DatabaseBackupUtility.Models;
 using DatabaseBackupUtility.Services.Interfaces;
 
 namespace DatabaseBackupUtility.Services;
@@ -54,9 +55,14 @@ public class SqliteConnectionService : IDatabaseConnection
     }
 
     // Takes a consistent snapshot of the database file via VACUUM INTO, which works safely even
-    // while other connections are active against the source file.
-    public async Task Backup(string backupFilePath, CancellationToken cancellationToken = default)
+    // while other connections are active against the source file. A SQLite database is always a
+    // single file, so there is no incremental/differential equivalent to chain off it.
+    public async Task<string?> Backup(string backupId, string backupFilePath, BackupType type = BackupType.Full,
+        BackupParent? parent = null, CancellationToken cancellationToken = default)
     {
+        if (type != BackupType.Full)
+            throw new NotSupportedException("SQLite does not support incremental or differential backups; take a new full backup instead.");
+
         var directory = Path.GetDirectoryName(backupFilePath);
         if (!string.IsNullOrEmpty(directory))
             Directory.CreateDirectory(directory);
@@ -70,10 +76,11 @@ public class SqliteConnectionService : IDatabaseConnection
         command.Parameters.AddWithValue("$path", backupFilePath);
         await command.ExecuteNonQueryAsync(cancellationToken);
         Console.WriteLine($"Backup created at {backupFilePath}");
+        return null;
     }
 
     // A SQLite database is a single file, so restoring means replacing that file with the backup.
-    public async Task Restore(string backupFilePath, CancellationToken cancellationToken = default)
+    public async Task Restore(string backupFilePath, BackupType type = BackupType.Full, CancellationToken cancellationToken = default)
     {
         if (!File.Exists(backupFilePath))
             throw new FileNotFoundException($"Backup file not found: {backupFilePath}");

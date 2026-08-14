@@ -67,6 +67,7 @@ DatabaseBackupUtility backup --config config.json
 ```
 
 Options:
+* `--type <full|incremental|differential>` — the kind of backup to create (default `full`). See [Backup types](#backup-types).
 * `--output <path>` — write the backup to an exact path instead of the auto-generated, timestamped name under `Storage.LocalPath`.
 * `--compress` — gzip the backup file (`.sql.gz`) after it's created.
 * `--dry-run` — validate configuration and test the database connection without actually creating a backup.
@@ -80,6 +81,31 @@ DatabaseBackupUtility restore --config config.json
 Options:
 * `--file <name>` — restore from a specific backup file instead of the most recent one for the configured database. Compressed (`.gz`) backups are decompressed automatically.
 * `--dry-run` — validate configuration and test the database connection without actually restoring.
+
+Restore automatically resolves the full/incremental/differential chain the target backup belongs to (see [Backup types](#backup-types)) and applies every step in order. Backups taken before chain metadata existed, or files not tracked in it, fall back to a plain single-file full restore.
+
+## Backup types
+
+Every database except SQLite (a single-file snapshot has nothing to be incremental against) supports three backup types:
+
+* **`full`** — a complete, standalone snapshot (`mysqldump`/`pg_dump`/`mongodump`), exactly as before. Every chain starts with one.
+* **`incremental`** — changes since the most recent backup of *any* type. Restoring an incremental backup applies the full backup plus every incremental step since it, in order.
+* **`differential`** — changes since the most recent *full* backup, regardless of how many differentials or incrementals came in between. Restoring a differential backup applies only the full backup plus that one differential.
+
+Each backup's place in the chain is recorded in a small JSON sidecar file kept locally under `Storage.LocalPath` (even when the backup blob itself goes to cloud storage, since remote storage backends aren't listable). `restore` reads these sidecars to work out which files to download and apply, and in what order.
+
+Per-engine mechanics:
+
+* **MySQL** — incremental/differential backups are captured with `mysqlbinlog --read-from-remote-server`, streaming binary log events since the parent's `file:position` checkpoint over the network (no filesystem access to the server needed). The output is plain SQL, applied the same way as a full dump. Requires binary logging enabled and `REPLICATION SLAVE`/`REPLICATION CLIENT` privileges for the configured user.
+* **PostgreSQL** — each full backup opens a pair of logical replication slots (`wal_level = logical` and the `wal2json` output plugin are required). Incremental backups consume one slot (so each call only sees changes since the last backup), while differential backups peek the other slot without consuming it (so every call sees everything since the full backup). The captured wal2json changes are translated into plain `INSERT`/`UPDATE`/`DELETE` statements and applied via `psql`, same as a full dump. Update/delete capture needs a primary key or `REPLICA IDENTITY FULL` on the affected tables; exotic column types (arrays, composite types, `bytea`) may need manual review.
+* **MongoDB** — requires a replica set (a standalone `mongod` has no oplog). Incremental/differential backups dump `local.oplog.rs` entries newer than the parent's timestamp and are applied with `mongorestore --oplogReplay`. A chain with several incremental/differential steps has its oplog dumps merged into one before replay, since `mongorestore` only replays a single oplog per call.
+
+```bash
+DatabaseBackupUtility backup --config config.json --type full
+DatabaseBackupUtility backup --config config.json --type incremental
+DatabaseBackupUtility backup --config config.json --type differential
+DatabaseBackupUtility restore --config config.json
+```
 
 ### Test Connection
 

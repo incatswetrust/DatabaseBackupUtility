@@ -1,14 +1,16 @@
+using DatabaseBackupUtility.Models;
 using DatabaseBackupUtility.Services.Interfaces;
 
 namespace DatabaseBackupUtility.Services;
 
 public class MongoDbBackupService(IDatabaseConnection dbConnection) : IBackupService
 {
-    public async Task CreateBackup(string backupFilePath, CancellationToken cancellationToken = default)
+    public async Task<string?> CreateBackup(string backupId, string backupFilePath, BackupType type = BackupType.Full,
+        BackupParent? parent = null, CancellationToken cancellationToken = default)
     {
         await dbConnection.Connect();
-        await dbConnection.Backup(backupFilePath, cancellationToken);
+        var position = await dbConnection.Backup(backupId, backupFilePath, type, parent, cancellationToken);
         await dbConnection.Disconnect();
-
+        return position;
     }
 }

@@ -1,3 +1,4 @@
+using DatabaseBackupUtility.Models;
 using DatabaseBackupUtility.Services;
 using Microsoft.Data.Sqlite;
 
@@ -38,7 +39,7 @@ public class SqliteConnectionServiceTests : IDisposable
     {
         var service = new SqliteConnectionService(_databasePath);
 
-        await service.Backup(_backupPath);
+        await service.Backup("backup-1", _backupPath);
 
         Assert.True(File.Exists(_backupPath));
         Assert.Equal("first", await ReadFirstItemName(_backupPath));
@@ -48,12 +49,21 @@ public class SqliteConnectionServiceTests : IDisposable
     public async Task Restore_ReplacesDatabaseFileWithBackupContents()
     {
         var service = new SqliteConnectionService(_databasePath);
-        await service.Backup(_backupPath);
+        await service.Backup("backup-1", _backupPath);
         await AddItem(_databasePath, "second");
 
         await service.Restore(_backupPath);
 
         Assert.Equal("first", await ReadFirstItemName(_databasePath));
+    }
+
+    [Fact]
+    public async Task Backup_RejectsIncrementalType()
+    {
+        var service = new SqliteConnectionService(_databasePath);
+
+        await Assert.ThrowsAsync<NotSupportedException>(
+            () => service.Backup("backup-1", _backupPath, BackupType.Incremental, new BackupParent("backup-1", null)));
     }
 
     private static async Task<string?> ReadFirstItemName(string databasePath)

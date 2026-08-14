@@ -47,6 +47,7 @@ public class CommandLineParser(string[]? args)
         Console.WriteLine("  DatabaseBackupUtility list --config <path_to_config>");
         Console.WriteLine("Options:");
         Console.WriteLine("  --config <path>  Specify the path to the configuration file.");
+        Console.WriteLine("  --type <type>    Backup type: full, incremental, or differential (default: full).");
         Console.WriteLine("  --file <name>    Specify which backup file to restore.");
         Console.WriteLine("  --output <path>  Specify the exact path to write the backup file to.");
         Console.WriteLine("  --compress       Compress the backup file with gzip.");

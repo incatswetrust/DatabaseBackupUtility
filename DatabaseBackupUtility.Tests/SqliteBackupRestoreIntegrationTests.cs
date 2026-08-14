@@ -10,7 +10,7 @@ public class SqliteBackupRestoreIntegrationTests
         var connection = new FakeDatabaseConnection();
         var backupService = new SqliteBackupService(connection);
 
-        await backupService.CreateBackup("/tmp/backup.db");
+        await backupService.CreateBackup("backup-1", "/tmp/backup.db");
 
         Assert.Equal(["Connect", "Backup", "Disconnect"], connection.Calls);
         Assert.Equal("/tmp/backup.db", connection.BackupFilePathReceived);
@@ -23,7 +23,7 @@ public class SqliteBackupRestoreIntegrationTests
         var backupService = new SqliteBackupService(connection);
         using var cts = new CancellationTokenSource();
 
-        await backupService.CreateBackup("/tmp/backup.db", cts.Token);
+        await backupService.CreateBackup("backup-1", "/tmp/backup.db", cancellationToken: cts.Token);
 
         Assert.Equal(cts.Token, connection.BackupTokenReceived);
     }
@@ -59,7 +59,7 @@ public class SqliteBackupRestoreIntegrationTests
         var backupService = new SqliteBackupService(connection);
         var restoreService = new SqliteRestoreService(connection);
 
-        await backupService.CreateBackup("/tmp/backup.db");
+        await backupService.CreateBackup("backup-1", "/tmp/backup.db");
         await restoreService.RestoreDatabase("/tmp/backup.db");
 
         Assert.Equal(["Connect", "Backup", "Disconnect", "Connect", "Restore", "Disconnect"], connection.Calls);
