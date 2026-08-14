@@ -199,6 +199,8 @@ using Polly;
                 var chainService = new BackupChainService(storageConfig.LocalPath);
                 var manifests = await chainService.LoadManifestsAsync(dbConfig.DatabaseName, cancellationToken);
                 var explicitFile = parser.GetOption("--file");
+                var selectiveTarget = parser.GetOption("--table") ?? parser.GetOption("--collection");
+                var targets = selectiveTarget is null ? null : new List<string> { selectiveTarget };
 
                 var targetManifest = manifests.Count == 0
                     ? null
@@ -216,7 +218,7 @@ using Polly;
                                 foreach (var step in chain)
                                     steps.Add((await DownloadAndDecompressAsync(step.FileName), step.Type));
 
-                                await restoreService?.RestoreChain(steps, cancellationToken)!;
+                                await restoreService?.RestoreChain(steps, targets, cancellationToken)!;
                             },
                             logger!,
                             notificationService!,
@@ -240,7 +242,7 @@ using Polly;
                         async () =>
                         {
                             var workingBackupPath = await DownloadAndDecompressAsync(backupFilePath);
-                            await restoreService?.RestoreDatabase(workingBackupPath, BackupType.Full, cancellationToken)!;
+                            await restoreService?.RestoreDatabase(workingBackupPath, BackupType.Full, targets, cancellationToken)!;
                         },
                         logger!,
                         notificationService!,

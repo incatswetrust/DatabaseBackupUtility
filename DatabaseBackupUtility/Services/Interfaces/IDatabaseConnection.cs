@@ -14,5 +14,8 @@ public interface IDatabaseConnection
     Task<string?> Backup(string backupId, string backupFilePath, BackupType type = BackupType.Full,
         BackupParent? parent = null, CancellationToken cancellationToken = default);
 
-    Task Restore(string backupFilePath, BackupType type = BackupType.Full, CancellationToken cancellationToken = default);
+    // `targets` optionally restricts the restore to specific tables (MySQL/PostgreSQL) or a
+    // single collection (MongoDB); null/empty restores everything in the backup, as before.
+    Task Restore(string backupFilePath, BackupType type = BackupType.Full, IReadOnlyList<string>? targets = null,
+        CancellationToken cancellationToken = default);
 }

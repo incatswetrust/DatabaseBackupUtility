@@ -109,11 +109,28 @@ public class MongoDbConnectionService : IDatabaseConnection
         return (int.Parse(parts[0]), int.Parse(parts[1]));
     }
 
-    public async Task Restore(string backupFilePath, BackupType type = BackupType.Full, CancellationToken cancellationToken = default)
+    public async Task Restore(string backupFilePath, BackupType type = BackupType.Full, IReadOnlyList<string>? targets = null,
+        CancellationToken cancellationToken = default)
     {
-        var restoreCommand = type == BackupType.Full
-            ? $"mongorestore --uri=\"{_connectionString}\" --db=\"{_database.DatabaseNamespace.DatabaseName}\" \"{backupFilePath}\""
-            : $"mongorestore --uri=\"{_connectionString}\" --oplogReplay --dir=\"{backupFilePath}\"";
+        var dbName = _database.DatabaseNamespace.DatabaseName;
+        string restoreCommand;
+        if (type != BackupType.Full)
+        {
+            restoreCommand = $"mongorestore --uri=\"{_connectionString}\" --oplogReplay --dir=\"{backupFilePath}\"";
+        }
+        else if (targets is { Count: > 0 })
+        {
+            // mongorestore --collection needs to be pointed directly at that collection's BSON
+            // file inside the dump directory, rather than the whole dump.
+            var collectionFile = Path.Combine(backupFilePath, dbName, $"{targets[0]}.bson");
+            restoreCommand =
+                $"mongorestore --uri=\"{_connectionString}\" --db=\"{dbName}\" --collection=\"{targets[0]}\" \"{collectionFile}\"";
+        }
+        else
+        {
+            restoreCommand = $"mongorestore --uri=\"{_connectionString}\" --db=\"{dbName}\" \"{backupFilePath}\"";
+        }
+
         await ProcessRunner.RunAsync("mongorestore", restoreCommand, cancellationToken);
         Console.WriteLine($"Database restored from {backupFilePath}");
     }

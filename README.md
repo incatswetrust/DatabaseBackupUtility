@@ -80,9 +80,25 @@ DatabaseBackupUtility restore --config config.json
 
 Options:
 * `--file <name>` — restore from a specific backup file instead of the most recent one for the configured database. Compressed (`.gz`) backups are decompressed automatically.
+* `--table <name>` — restore only this table (MySQL/PostgreSQL). See [Selective restore](#selective-restore).
+* `--collection <name>` — restore only this collection (MongoDB). See [Selective restore](#selective-restore).
 * `--dry-run` — validate configuration and test the database connection without actually restoring.
 
 Restore automatically resolves the full/incremental/differential chain the target backup belongs to (see [Backup types](#backup-types)) and applies every step in order. Backups taken before chain metadata existed, or files not tracked in it, fall back to a plain single-file full restore.
+
+## Selective restore
+
+By default, `restore` restores everything in the backup. To restore just one table or collection instead:
+
+```bash
+DatabaseBackupUtility restore --config config.json --table orders
+DatabaseBackupUtility restore --config config.json --collection orders
+```
+
+* **MongoDB** (`--collection`) — points `mongorestore --collection` directly at that collection's BSON file inside the dump, so only it is touched.
+* **MySQL/PostgreSQL** (`--table`) — since a full backup is one dump file covering every table, the utility filters it down to only the statements for the requested table (its `CREATE`/`DROP`, and its `INSERT`/`COPY` data) before applying it, leaving other tables untouched. This is a best-effort, line-oriented filter rather than a full SQL parser — fine for the common case of restoring one table's data, but a table name that only appears incidentally (e.g. as a foreign key reference inside another table's definition) could be pulled in too.
+
+For MySQL/PostgreSQL, `--table` is applied to every step of an incremental/differential chain restore, since each step is itself a plain-SQL file the same filter works on. For MongoDB, `--collection` only restricts the initial full restore step — an incremental/differential chain's oplog replay still applies to the whole database, since oplog entries aren't filterable by collection the same way.
 
 ## Backup types
 

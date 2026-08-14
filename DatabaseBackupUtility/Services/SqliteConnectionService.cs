@@ -79,8 +79,10 @@ public class SqliteConnectionService : IDatabaseConnection
         return null;
     }
 
-    // A SQLite database is a single file, so restoring means replacing that file with the backup.
-    public async Task Restore(string backupFilePath, BackupType type = BackupType.Full, CancellationToken cancellationToken = default)
+    // A SQLite database is a single file, so restoring means replacing that file with the backup;
+    // there's no notion of restoring just one table from that.
+    public async Task Restore(string backupFilePath, BackupType type = BackupType.Full, IReadOnlyList<string>? targets = null,
+        CancellationToken cancellationToken = default)
     {
         if (!File.Exists(backupFilePath))
             throw new FileNotFoundException($"Backup file not found: {backupFilePath}");

@@ -168,20 +168,33 @@ public class MySqlConnectionService : IDatabaseConnection
         return (parts[0], long.Parse(parts[1]));
     }
 
-    public async Task Restore(string backupFilePath, BackupType type = BackupType.Full, CancellationToken cancellationToken = default)
+    public async Task Restore(string backupFilePath, BackupType type = BackupType.Full, IReadOnlyList<string>? targets = null,
+        CancellationToken cancellationToken = default)
     {
+        var effectiveFilePath = backupFilePath;
+        string? filteredTempFile = null;
+        if (targets is { Count: > 0 })
+        {
+            var content = await File.ReadAllTextAsync(backupFilePath, cancellationToken);
+            filteredTempFile = Path.GetTempFileName();
+            await File.WriteAllTextAsync(filteredTempFile, SqlDumpTableFilter.FilterByTables(content, targets), cancellationToken);
+            effectiveFilePath = filteredTempFile;
+        }
+
         var cnfPath = Path.GetTempFileName();
         try
         {
             await File.WriteAllTextAsync(cnfPath, $"[client]\npassword={_password}\n", cancellationToken);
             var restoreCommand =
-                $"mysql --defaults-extra-file={cnfPath} {HostArguments()} --database={_database} --user={_username} < {backupFilePath}";
+                $"mysql --defaults-extra-file={cnfPath} {HostArguments()} --database={_database} --user={_username} < {effectiveFilePath}";
             await ProcessRunner.RunAsync("mysql", restoreCommand, cancellationToken);
             Console.WriteLine($"Database restored from {backupFilePath}");
         }
         finally
         {
             File.Delete(cnfPath);
+            if (filteredTempFile is not null)
+                File.Delete(filteredTempFile);
         }
     }
 }

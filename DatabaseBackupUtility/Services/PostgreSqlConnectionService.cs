@@ -148,13 +148,32 @@ public class PostgreSqlConnectionService : IDatabaseConnection
     private static string DifferentialSlotName(string backupId) => $"dbbu_{Sanitize(backupId)}_diff";
     private static string Sanitize(string id) => new(id.Where(char.IsLetterOrDigit).Select(char.ToLowerInvariant).ToArray());
 
-    public async Task Restore(string backupFilePath, BackupType type = BackupType.Full, CancellationToken cancellationToken = default)
+    public async Task Restore(string backupFilePath, BackupType type = BackupType.Full, IReadOnlyList<string>? targets = null,
+        CancellationToken cancellationToken = default)
     {
-        // Full dumps and reconstructed incremental/differential SQL files are both applied the
-        // same way.
-        var restoreCommand = $"psql --file \"{backupFilePath}\" --dbname \"{DbNameConnectionString()}\"";
-        await ProcessRunner.RunAsync("psql", restoreCommand, cancellationToken, PgPasswordEnvironment());
-        Console.WriteLine($"Database restored from {backupFilePath}");
+        var effectiveFilePath = backupFilePath;
+        string? filteredTempFile = null;
+        if (targets is { Count: > 0 })
+        {
+            var content = await File.ReadAllTextAsync(backupFilePath, cancellationToken);
+            filteredTempFile = Path.GetTempFileName();
+            await File.WriteAllTextAsync(filteredTempFile, SqlDumpTableFilter.FilterByTables(content, targets), cancellationToken);
+            effectiveFilePath = filteredTempFile;
+        }
+
+        try
+        {
+            // Full dumps and reconstructed incremental/differential SQL files are both applied the
+            // same way.
+            var restoreCommand = $"psql --file \"{effectiveFilePath}\" --dbname \"{DbNameConnectionString()}\"";
+            await ProcessRunner.RunAsync("psql", restoreCommand, cancellationToken, PgPasswordEnvironment());
+            Console.WriteLine($"Database restored from {backupFilePath}");
+        }
+        finally
+        {
+            if (filteredTempFile is not null)
+                File.Delete(filteredTempFile);
+        }
     }
 
     private string DbNameConnectionString()

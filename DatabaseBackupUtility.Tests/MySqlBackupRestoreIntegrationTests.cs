@@ -92,4 +92,15 @@ public class MySqlBackupRestoreIntegrationTests
         Assert.Equal("/tmp/inc1.sql", connection.RestoreFilePathReceived);
         Assert.Equal(BackupType.Incremental, connection.RestoreTypeReceived);
     }
+
+    [Fact]
+    public async Task RestoreDatabase_ForwardsSelectiveTableTargetToTheConnection()
+    {
+        var connection = new FakeDatabaseConnection();
+        var restoreService = new MySqlRestoreService(connection);
+
+        await restoreService.RestoreDatabase("/tmp/backup.sql", targets: ["orders"]);
+
+        Assert.Equal(["orders"], connection.RestoreTargetsReceived);
+    }
 }

@@ -5,12 +5,13 @@ namespace DatabaseBackupUtility.Services;
 
 public class MongoDbRestoreService(IDatabaseConnection dbConnection) : IRestoreService
 {
-    public async Task RestoreDatabase(string backupFilePath, BackupType type = BackupType.Full, CancellationToken cancellationToken = default)
+    public async Task RestoreDatabase(string backupFilePath, BackupType type = BackupType.Full, IReadOnlyList<string>? targets = null,
+        CancellationToken cancellationToken = default)
     {
         await dbConnection.Connect();
         try
         {
-            await dbConnection.Restore(backupFilePath, type, cancellationToken);
+            await dbConnection.Restore(backupFilePath, type, targets, cancellationToken);
             Console.WriteLine($"Database restored successfully from {backupFilePath}");
         }
         catch (Exception ex)
@@ -29,12 +30,13 @@ public class MongoDbRestoreService(IDatabaseConnection dbConnection) : IRestoreS
     // oplog.bson files from every delta step (each is just a sequential BSON document stream, so
     // concatenation in chronological order produces one valid combined oplog) and replaying that
     // once.
-    public async Task RestoreChain(IReadOnlyList<(string FilePath, BackupType Type)> chain, CancellationToken cancellationToken = default)
+    public async Task RestoreChain(IReadOnlyList<(string FilePath, BackupType Type)> chain, IReadOnlyList<string>? targets = null,
+        CancellationToken cancellationToken = default)
     {
         if (chain.Count == 0) return;
 
         var full = chain[0];
-        await RestoreDatabase(full.FilePath, full.Type, cancellationToken);
+        await RestoreDatabase(full.FilePath, full.Type, targets, cancellationToken);
 
         var deltas = chain.Skip(1).ToList();
         if (deltas.Count == 0) return;
@@ -58,7 +60,7 @@ public class MongoDbRestoreService(IDatabaseConnection dbConnection) : IRestoreS
             await dbConnection.Connect();
             try
             {
-                await dbConnection.Restore(mergedOplogDir, BackupType.Incremental, cancellationToken);
+                await dbConnection.Restore(mergedOplogDir, BackupType.Incremental, cancellationToken: cancellationToken);
                 Console.WriteLine($"Applied {deltas.Count} incremental/differential step(s) from oplog history.");
             }
             finally

@@ -11,6 +11,7 @@ internal class FakeDatabaseConnection : IDatabaseConnection
     public string? RestoreFilePathReceived { get; private set; }
     public BackupType BackupTypeReceived { get; private set; }
     public BackupType RestoreTypeReceived { get; private set; }
+    public IReadOnlyList<string>? RestoreTargetsReceived { get; private set; }
     public BackupParent? ParentReceived { get; private set; }
     public CancellationToken BackupTokenReceived { get; private set; }
     public CancellationToken RestoreTokenReceived { get; private set; }
@@ -18,6 +19,10 @@ internal class FakeDatabaseConnection : IDatabaseConnection
     public bool ThrowOnRestore { get; set; }
     public bool TestConnectionResult { get; set; } = true;
     public string? PositionToReturn { get; set; }
+
+    // Invoked synchronously inside Restore(), before returning, so a test can inspect
+    // filesystem state (e.g. a merged temp directory) that gets cleaned up right after.
+    public Action<string>? OnRestore { get; set; }
 
     public Task<bool> TestConnection()
     {
@@ -51,12 +56,15 @@ internal class FakeDatabaseConnection : IDatabaseConnection
         return Task.FromResult(PositionToReturn);
     }
 
-    public Task Restore(string backupFilePath, BackupType type = BackupType.Full, CancellationToken cancellationToken = default)
+    public Task Restore(string backupFilePath, BackupType type = BackupType.Full, IReadOnlyList<string>? targets = null,
+        CancellationToken cancellationToken = default)
     {
         Calls.Add(nameof(Restore));
         RestoreFilePathReceived = backupFilePath;
         RestoreTypeReceived = type;
+        RestoreTargetsReceived = targets;
         RestoreTokenReceived = cancellationToken;
+        OnRestore?.Invoke(backupFilePath);
         if (ThrowOnRestore)
             throw new InvalidOperationException("restore failed");
         return Task.CompletedTask;

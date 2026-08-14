@@ -88,4 +88,15 @@ public class PostgreSqlBackupRestoreIntegrationTests
         Assert.Equal("/tmp/diff1.sql", connection.RestoreFilePathReceived);
         Assert.Equal(BackupType.Differential, connection.RestoreTypeReceived);
     }
+
+    [Fact]
+    public async Task RestoreDatabase_ForwardsSelectiveTableTargetToTheConnection()
+    {
+        var connection = new FakeDatabaseConnection();
+        var restoreService = new PostgreSqlRestoreService(connection);
+
+        await restoreService.RestoreDatabase("/tmp/backup.sql", targets: ["orders"]);
+
+        Assert.Equal(["orders"], connection.RestoreTargetsReceived);
+    }
 }

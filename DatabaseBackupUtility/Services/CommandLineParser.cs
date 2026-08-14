@@ -49,6 +49,8 @@ public class CommandLineParser(string[]? args)
         Console.WriteLine("  --config <path>  Specify the path to the configuration file.");
         Console.WriteLine("  --type <type>    Backup type: full, incremental, or differential (default: full).");
         Console.WriteLine("  --file <name>    Specify which backup file to restore.");
+        Console.WriteLine("  --table <name>   Restore (best-effort) only this table from a MySQL/PostgreSQL backup.");
+        Console.WriteLine("  --collection <name>  Restore only this collection from a MongoDB backup.");
         Console.WriteLine("  --output <path>  Specify the exact path to write the backup file to.");
         Console.WriteLine("  --compress       Compress the backup file with gzip.");
         Console.WriteLine("  --dry-run        Validate configuration and connection without running the operation.");
